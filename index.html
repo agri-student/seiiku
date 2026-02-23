@@ -5,344 +5,168 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>作物生育管理 - 高校農業科</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <style>
-:root {
-  --primary: #2e7d32;
-  --primary-light: #60ad5e;
-  --primary-dark: #005005;
-  --accent: #ff8f00;
-  --bg: #f5f5f5;
-  --card: #ffffff;
-  --text: #212121;
-  --text-secondary: #757575;
-  --border: #e0e0e0;
-  --danger: #c62828;
-  --danger-light: #fbe9e7;
-  --success: #2e7d32;
-  --success-light: #e8f5e9;
-  --info: #1565c0;
-  --info-light: #e3f2fd;
-  --shadow: 0 2px 8px rgba(0,0,0,0.1);
-  --radius: 8px;
+:root{--primary:#2e7d32;--primary-light:#60ad5e;--primary-dark:#005005;--accent:#ff8f00;--bg:#f5f5f5;--card:#fff;--text:#212121;--text-secondary:#757575;--border:#e0e0e0;--danger:#c62828;--success:#2e7d32;--success-light:#e8f5e9;--info:#1565c0;--info-light:#e3f2fd;--shadow:0 2px 8px rgba(0,0,0,.1);--radius:8px}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Hiragino Sans','Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh}
+header{background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;padding:12px 16px;position:sticky;top:0;z-index:100;box-shadow:var(--shadow);display:flex;justify-content:space-between;align-items:center}
+header h1{font-size:1.15rem;font-weight:700;display:flex;align-items:center;gap:8px}
+header h1 span{font-size:1.3rem}
+.header-right{display:flex;align-items:center;gap:10px;font-size:.82rem}
+.header-right .user-name{opacity:.9}
+.header-right button{background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);padding:5px 12px;border-radius:5px;font-size:.78rem;cursor:pointer}
+.header-right button:hover{background:rgba(255,255,255,.35)}
+nav{background:var(--card);border-bottom:1px solid var(--border);overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;position:sticky;top:52px;z-index:99}
+nav::-webkit-scrollbar{height:0}
+.nav-inner{display:flex;min-width:max-content}
+.tab-btn{background:none;border:none;padding:12px 16px;font-size:.85rem;color:var(--text-secondary);cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;white-space:nowrap;font-weight:500}
+.tab-btn:hover{color:var(--primary);background:var(--success-light)}
+.tab-btn.active{color:var(--primary);border-bottom-color:var(--primary);font-weight:700}
+main{padding:16px;max-width:1200px;margin:0 auto}
+.tab-content{display:none}.tab-content.active{display:block}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:16px}
+.card-title{font-size:1.1rem;font-weight:700;margin-bottom:16px;color:var(--primary-dark);border-bottom:2px solid var(--primary-light);padding-bottom:8px}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group label{font-size:.8rem;font-weight:600;color:var(--text-secondary)}
+.form-group input,.form-group select,.form-group textarea{padding:10px 12px;border:1px solid var(--border);border-radius:6px;font-size:.95rem;font-family:inherit;transition:border-color .2s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(46,125,50,.15)}
+.form-group textarea{resize:vertical;min-height:80px}
+.form-group.full{grid-column:1/-1}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border:none;border-radius:6px;font-size:.9rem;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-dark)}
+.btn-accent{background:var(--accent);color:#fff}.btn-accent:hover{background:#e65100}
+.btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{background:#8e0000}
+.btn-outline{background:transparent;color:var(--primary);border:2px solid var(--primary)}.btn-outline:hover{background:var(--success-light)}
+.btn-sm{padding:6px 12px;font-size:.8rem}
+.btn-group{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)}
+th{background:var(--success-light);font-weight:700;color:var(--primary-dark);position:sticky;top:0}
+tr:hover{background:#f9f9f9}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--radius);border:1px solid var(--border)}
+.badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:.75rem;font-weight:600}
+.badge-rice{background:#e8f5e9;color:#2e7d32}.badge-wheat{background:#fff3e0;color:#e65100}.badge-veg{background:#e3f2fd;color:#1565c0}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px}
+.stat-card{background:var(--card);border-radius:var(--radius);padding:16px;text-align:center;box-shadow:var(--shadow);border-left:4px solid var(--primary)}
+.stat-card .num{font-size:2rem;font-weight:800;color:var(--primary)}
+.stat-card .label{font-size:.78rem;color:var(--text-secondary);margin-top:4px}
+.empty-state{text-align:center;padding:40px 20px;color:var(--text-secondary)}
+.empty-state .icon{font-size:3rem;margin-bottom:12px}
+.empty-state p{font-size:.95rem}
+.filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
+.filter-bar select,.filter-bar input{padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:.85rem;font-family:inherit}
+.chart-container{position:relative;height:300px;max-height:400px}
+.grain-fields{display:none}.grain-fields.show{display:contents}
+.print-section{margin-bottom:24px}
+.record-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:12px;border-left:4px solid var(--primary)}
+.record-card .date{font-weight:700;color:var(--primary-dark);margin-bottom:8px}
+.record-card .meta{font-size:.82rem;color:var(--text-secondary)}
+.record-card .content{margin-top:8px;font-size:.9rem}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--primary-dark);color:#fff;padding:12px 24px;border-radius:8px;font-size:.9rem;z-index:300;box-shadow:0 4px 16px rgba(0,0,0,.3);opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;justify-content:center;align-items:flex-start;padding:20px;overflow-y:auto}
+.modal-overlay.show{display:flex}
+.modal{background:var(--card);border-radius:12px;width:100%;max-width:640px;box-shadow:0 8px 32px rgba(0,0,0,.2);margin-top:40px;margin-bottom:40px}
+.modal-body{padding:20px}
+.confirm-dialog{text-align:center;padding:20px}
+.confirm-dialog p{margin-bottom:20px;font-size:1rem}
+/* Login Screen */
+#loginScreen{display:flex;justify-content:center;align-items:center;min-height:100vh;background:linear-gradient(135deg,#1b5e20,#4caf50);padding:20px}
+#appScreen{display:none}
+.login-card{background:#fff;border-radius:16px;padding:40px 32px;width:100%;max-width:420px;box-shadow:0 12px 40px rgba(0,0,0,.25);text-align:center}
+.login-card h2{color:var(--primary-dark);margin-bottom:8px;font-size:1.5rem}
+.login-card .subtitle{color:var(--text-secondary);margin-bottom:28px;font-size:.9rem}
+.login-card .form-group{text-align:left;margin-bottom:12px}
+.login-card .form-group input{width:100%}
+.login-card .btn{width:100%;justify-content:center;padding:12px;font-size:1rem;margin-top:8px}
+.login-card .switch-link{margin-top:16px;font-size:.85rem;color:var(--text-secondary)}
+.login-card .switch-link a{color:var(--primary);cursor:pointer;text-decoration:underline;font-weight:600}
+.login-error{color:var(--danger);font-size:.85rem;margin-top:8px;min-height:1.2em}
+.login-card .logo{font-size:3rem;margin-bottom:8px}
+/* Setup Banner */
+.setup-banner{background:#fff3e0;border:2px solid #ff8f00;border-radius:var(--radius);padding:16px;margin-bottom:16px;font-size:.88rem}
+.setup-banner h3{color:#e65100;margin-bottom:8px}
+.setup-banner code{background:#fff;padding:2px 6px;border-radius:4px;font-size:.82rem}
+/* Loading */
+.loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,.8);z-index:250;display:flex;justify-content:center;align-items:center;font-size:1.1rem;color:var(--primary)}
+.spinner{display:inline-block;width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite;margin-right:10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:600px){
+  header h1{font-size:.95rem}
+  .tab-btn{padding:10px 12px;font-size:.78rem}
+  main{padding:10px}
+  .card{padding:14px}
+  .form-grid{grid-template-columns:1fr}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .btn{padding:8px 14px;font-size:.82rem}
+  .modal{margin-top:10px}
+  .chart-container{height:250px}
+  .login-card{padding:28px 20px}
 }
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  line-height: 1.6;
-  min-height: 100vh;
-}
-header {
-  background: linear-gradient(135deg, var(--primary), var(--primary-light));
-  color: white;
-  padding: 12px 16px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  box-shadow: var(--shadow);
-}
-header h1 {
-  font-size: 1.2rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-header h1 span { font-size: 1.4rem; }
-nav {
-  background: var(--card);
-  border-bottom: 1px solid var(--border);
-  overflow-x: auto;
-  white-space: nowrap;
-  -webkit-overflow-scrolling: touch;
-  position: sticky;
-  top: 52px;
-  z-index: 99;
-}
-nav::-webkit-scrollbar { height: 0; }
-.nav-inner {
-  display: flex;
-  min-width: max-content;
-}
-.tab-btn {
-  background: none;
-  border: none;
-  padding: 12px 16px;
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  cursor: pointer;
-  border-bottom: 3px solid transparent;
-  transition: all 0.2s;
-  white-space: nowrap;
-  font-weight: 500;
-}
-.tab-btn:hover { color: var(--primary); background: var(--success-light); }
-.tab-btn.active {
-  color: var(--primary);
-  border-bottom-color: var(--primary);
-  font-weight: 700;
-}
-main { padding: 16px; max-width: 1200px; margin: 0 auto; }
-.tab-content { display: none; }
-.tab-content.active { display: block; }
-.card {
-  background: var(--card);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 20px;
-  margin-bottom: 16px;
-}
-.card-title {
-  font-size: 1.1rem;
-  font-weight: 700;
-  margin-bottom: 16px;
-  color: var(--primary-dark);
-  border-bottom: 2px solid var(--primary-light);
-  padding-bottom: 8px;
-}
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
-}
-.form-group { display: flex; flex-direction: column; gap: 4px; }
-.form-group label {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-}
-.form-group input, .form-group select, .form-group textarea {
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  font-size: 0.95rem;
-  font-family: inherit;
-  transition: border-color 0.2s;
-}
-.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(46,125,50,0.15);
-}
-.form-group textarea { resize: vertical; min-height: 80px; }
-.form-group.full { grid-column: 1 / -1; }
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-family: inherit;
-}
-.btn-primary { background: var(--primary); color: white; }
-.btn-primary:hover { background: var(--primary-dark); }
-.btn-accent { background: var(--accent); color: white; }
-.btn-accent:hover { background: #e65100; }
-.btn-danger { background: var(--danger); color: white; }
-.btn-danger:hover { background: #8e0000; }
-.btn-outline {
-  background: transparent;
-  color: var(--primary);
-  border: 2px solid var(--primary);
-}
-.btn-outline:hover { background: var(--success-light); }
-.btn-sm { padding: 6px 12px; font-size: 0.8rem; }
-.btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.85rem;
-}
-th, td {
-  padding: 10px 12px;
-  text-align: left;
-  border-bottom: 1px solid var(--border);
-}
-th {
-  background: var(--success-light);
-  font-weight: 700;
-  color: var(--primary-dark);
-  position: sticky;
-  top: 0;
-}
-tr:hover { background: #f9f9f9; }
-.table-wrap {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-}
-.badge {
-  display: inline-block;
-  padding: 2px 10px;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-.badge-rice { background: #e8f5e9; color: #2e7d32; }
-.badge-wheat { background: #fff3e0; color: #e65100; }
-.badge-veg { background: #e3f2fd; color: #1565c0; }
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 12px;
-  margin-bottom: 20px;
-}
-.stat-card {
-  background: var(--card);
-  border-radius: var(--radius);
-  padding: 16px;
-  text-align: center;
-  box-shadow: var(--shadow);
-  border-left: 4px solid var(--primary);
-}
-.stat-card .num {
-  font-size: 2rem;
-  font-weight: 800;
-  color: var(--primary);
-}
-.stat-card .label {
-  font-size: 0.78rem;
-  color: var(--text-secondary);
-  margin-top: 4px;
-}
-.modal-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.5);
-  z-index: 200;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 20px;
-  overflow-y: auto;
-}
-.modal-overlay.show { display: flex; }
-.modal {
-  background: var(--card);
-  border-radius: 12px;
-  width: 100%;
-  max-width: 640px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-  margin-top: 40px;
-  margin-bottom: 40px;
-}
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border);
-}
-.modal-header h3 { font-size: 1.1rem; color: var(--primary-dark); }
-.modal-close {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: var(--text-secondary);
-  padding: 4px;
-}
-.modal-body { padding: 20px; }
-.modal-footer {
-  padding: 16px 20px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-}
-.empty-state {
-  text-align: center;
-  padding: 40px 20px;
-  color: var(--text-secondary);
-}
-.empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
-.empty-state p { font-size: 0.95rem; }
-.filter-bar {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
-  align-items: center;
-}
-.filter-bar select, .filter-bar input {
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-family: inherit;
-}
-.chart-container {
-  position: relative;
-  height: 300px;
-  max-height: 400px;
-}
-.grain-fields { display: none; }
-.grain-fields.show { display: contents; }
-.print-section { margin-bottom: 24px; }
-.record-card {
-  background: var(--card);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 16px;
-  margin-bottom: 12px;
-  border-left: 4px solid var(--primary);
-}
-.record-card .date { font-weight: 700; color: var(--primary-dark); margin-bottom: 8px; }
-.record-card .meta { font-size: 0.82rem; color: var(--text-secondary); }
-.record-card .content { margin-top: 8px; font-size: 0.9rem; }
-.toast {
-  position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--primary-dark);
-  color: white;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  z-index: 300;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-  opacity: 0;
-  transition: opacity 0.3s;
-  pointer-events: none;
-}
-.toast.show { opacity: 1; }
-.confirm-dialog {
-  text-align: center;
-  padding: 20px;
-}
-.confirm-dialog p { margin-bottom: 20px; font-size: 1rem; }
-@media (max-width: 600px) {
-  header h1 { font-size: 1rem; }
-  .tab-btn { padding: 10px 12px; font-size: 0.78rem; }
-  main { padding: 10px; }
-  .card { padding: 14px; }
-  .form-grid { grid-template-columns: 1fr; }
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
-  .btn { padding: 8px 14px; font-size: 0.82rem; }
-  .modal { margin-top: 10px; }
-  .chart-container { height: 250px; }
-}
-@media print {
-  header, nav, .btn-group, .filter-bar, .no-print { display: none !important; }
-  .tab-content { display: block !important; }
-  .card { box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid; }
-  body { background: white; }
-  main { max-width: 100%; padding: 0; }
+@media print{
+  header,nav,.btn-group,.filter-bar,.no-print,.setup-banner{display:none!important}
+  .tab-content{display:block!important}
+  .card{box-shadow:none;border:1px solid #ccc;page-break-inside:avoid}
+  body{background:#fff}main{max-width:100%;padding:0}
+  #loginScreen{display:none!important}
+  #appScreen{display:block!important}
 }
 </style>
 </head>
 <body>
 
+<!-- ========== LOGIN SCREEN ========== -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="logo">🌾</div>
+    <h2>作物生育管理</h2>
+    <p class="subtitle">高校農業科 授業・農場管理システム</p>
+    <div id="loginFormArea">
+      <div class="form-group">
+        <label>メールアドレス</label>
+        <input type="email" id="loginEmail" placeholder="example@school.ac.jp">
+      </div>
+      <div class="form-group">
+        <label>パスワード</label>
+        <input type="password" id="loginPassword" placeholder="パスワード">
+      </div>
+      <div class="login-error" id="loginError"></div>
+      <button class="btn btn-primary" id="loginBtn" onclick="doLogin()">ログイン</button>
+      <div class="switch-link">アカウントがない場合 → <a onclick="toggleAuthMode()">新規登録</a></div>
+    </div>
+    <div id="registerFormArea" style="display:none;">
+      <div class="form-group">
+        <label>表示名（生徒名 / 教員名）</label>
+        <input type="text" id="regName" placeholder="例: 山田太郎">
+      </div>
+      <div class="form-group">
+        <label>メールアドレス</label>
+        <input type="email" id="regEmail" placeholder="example@school.ac.jp">
+      </div>
+      <div class="form-group">
+        <label>パスワード（6文字以上）</label>
+        <input type="password" id="regPassword" placeholder="パスワード">
+      </div>
+      <div class="login-error" id="regError"></div>
+      <button class="btn btn-primary" id="regBtn" onclick="doRegister()">新規登録</button>
+      <div class="switch-link">アカウントをお持ちの方 → <a onclick="toggleAuthMode()">ログイン</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== APP SCREEN ========== -->
+<div id="appScreen">
 <header>
-  <h1><span>🌾</span> 作物生育管理システム</h1>
+  <h1><span>🌾</span> 作物生育管理</h1>
+  <div class="header-right">
+    <span class="user-name" id="displayUserName"></span>
+    <button onclick="doLogout()">ログアウト</button>
+  </div>
 </header>
 
 <nav>
@@ -358,17 +182,17 @@ tr:hover { background: #f9f9f9; }
 </nav>
 
 <main>
+  <div id="setupBanner" class="setup-banner" style="display:none;">
+    <h3>Firebase 未設定</h3>
+    <p>このアプリを使うには、HTMLファイル内の <code>firebaseConfig</code> をあなたのFirebaseプロジェクトの設定値に書き換えてください。</p>
+    <p style="margin-top:8px;">現在はデモモード（localStorage）で動作しています。</p>
+  </div>
+
   <!-- ダッシュボード -->
   <div id="dashboard" class="tab-content active">
     <div class="stats-grid" id="statsGrid"></div>
-    <div class="card">
-      <div class="card-title">最近の生育記録</div>
-      <div id="recentRecords"></div>
-    </div>
-    <div class="card">
-      <div class="card-title">今後の予定収穫</div>
-      <div id="upcomingHarvest"></div>
-    </div>
+    <div class="card"><div class="card-title">最近の生育記録</div><div id="recentRecords"></div></div>
+    <div class="card"><div class="card-title">今後の予定収穫</div><div id="upcomingHarvest"></div></div>
   </div>
 
   <!-- 作物管理 -->
@@ -377,72 +201,25 @@ tr:hover { background: #f9f9f9; }
       <div class="card-title">作物登録</div>
       <form id="cropForm">
         <div class="form-grid">
-          <div class="form-group">
-            <label>作物タイプ *</label>
-            <select id="cropType" required>
-              <option value="">選択してください</option>
-              <option value="rice">水稲</option>
-              <option value="wheat">麦</option>
-              <option value="vegetable">野菜類</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>作物名 *</label>
-            <input type="text" id="cropName" placeholder="例: コシヒカリ、トマト" required>
-          </div>
-          <div class="form-group">
-            <label>品種</label>
-            <input type="text" id="cropVariety" placeholder="例: 早生品種">
-          </div>
-          <div class="form-group">
-            <label>圃場番号 *</label>
-            <input type="text" id="cropField" placeholder="例: A-1" required>
-          </div>
-          <div class="form-group">
-            <label>担当生徒名 *</label>
-            <input type="text" id="cropStudent" placeholder="例: 山田太郎" required>
-          </div>
-          <div class="form-group">
-            <label>播種日</label>
-            <input type="date" id="cropSowDate">
-          </div>
-          <div class="form-group">
-            <label>定植日</label>
-            <input type="date" id="cropPlantDate">
-          </div>
-          <div class="form-group">
-            <label>予定収穫日</label>
-            <input type="date" id="cropHarvestDate">
-          </div>
-          <div id="riceFields" class="grain-fields">
-            <div class="form-group">
-              <label>出穂日</label>
-              <input type="date" id="cropHeadingDate">
-            </div>
-          </div>
-          <div id="wheatFields" class="grain-fields">
-            <div class="form-group">
-              <label>穂揃い期</label>
-              <input type="date" id="cropEarDate">
-            </div>
-          </div>
+          <div class="form-group"><label>作物タイプ *</label><select id="cropType" required><option value="">選択してください</option><option value="rice">水稲</option><option value="wheat">麦</option><option value="vegetable">野菜類</option></select></div>
+          <div class="form-group"><label>作物名 *</label><input type="text" id="cropName" placeholder="例: コシヒカリ、トマト" required></div>
+          <div class="form-group"><label>品種</label><input type="text" id="cropVariety" placeholder="例: 早生品種"></div>
+          <div class="form-group"><label>圃場番号 *</label><input type="text" id="cropField" placeholder="例: A-1" required></div>
+          <div class="form-group"><label>担当生徒名 *</label><input type="text" id="cropStudent" placeholder="例: 山田太郎" required></div>
+          <div class="form-group"><label>播種日</label><input type="date" id="cropSowDate"></div>
+          <div class="form-group"><label>定植日</label><input type="date" id="cropPlantDate"></div>
+          <div class="form-group"><label>予定収穫日</label><input type="date" id="cropHarvestDate"></div>
+          <div id="riceFields" class="grain-fields"><div class="form-group"><label>出穂日</label><input type="date" id="cropHeadingDate"></div></div>
+          <div id="wheatFields" class="grain-fields"><div class="form-group"><label>穂揃い期</label><input type="date" id="cropEarDate"></div></div>
         </div>
         <input type="hidden" id="cropEditId">
-        <div class="btn-group no-print">
-          <button type="submit" class="btn btn-primary">登録</button>
-          <button type="button" class="btn btn-outline" onclick="resetCropForm()">クリア</button>
-        </div>
+        <div class="btn-group no-print"><button type="submit" class="btn btn-primary">登録</button><button type="button" class="btn btn-outline" onclick="resetCropForm()">クリア</button></div>
       </form>
     </div>
     <div class="card">
       <div class="card-title">登録作物一覧</div>
       <div class="filter-bar no-print">
-        <select id="cropFilterType" onchange="renderCropList()">
-          <option value="">全タイプ</option>
-          <option value="rice">水稲</option>
-          <option value="wheat">麦</option>
-          <option value="vegetable">野菜類</option>
-        </select>
+        <select id="cropFilterType" onchange="renderCropList()"><option value="">全タイプ</option><option value="rice">水稲</option><option value="wheat">麦</option><option value="vegetable">野菜類</option></select>
         <input type="text" id="cropFilterText" placeholder="検索..." oninput="renderCropList()">
       </div>
       <div id="cropList"></div>
@@ -455,107 +232,24 @@ tr:hover { background: #f9f9f9; }
       <div class="card-title">生育記録の入力</div>
       <form id="growthForm">
         <div class="form-grid">
-          <div class="form-group">
-            <label>作物 *</label>
-            <select id="growthCrop" required></select>
-          </div>
-          <div class="form-group">
-            <label>日付 *</label>
-            <input type="date" id="growthDate" required>
-          </div>
-          <div class="form-group">
-            <label>生育ステージ</label>
-            <select id="growthStage">
-              <option value="">選択</option>
-              <option value="播種">播種</option>
-              <option value="発芽">発芽</option>
-              <option value="育苗">育苗</option>
-              <option value="定植">定植</option>
-              <option value="活着">活着</option>
-              <option value="生育初期">生育初期</option>
-              <option value="生育中期">生育中期</option>
-              <option value="生育後期">生育後期</option>
-              <option value="開花">開花</option>
-              <option value="結実">結実</option>
-              <option value="成熟">成熟</option>
-              <option value="収穫">収穫</option>
-              <option value="分げつ期">分げつ期</option>
-              <option value="幼穂形成期">幼穂形成期</option>
-              <option value="出穂期">出穂期</option>
-              <option value="登熟期">登熟期</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>草丈 (cm)</label>
-            <input type="number" id="growthHeight" step="0.1" min="0" placeholder="例: 25.5">
-          </div>
-          <div class="form-group">
-            <label>茎数 (本)</label>
-            <input type="number" id="growthStems" min="0" placeholder="例: 15">
-          </div>
-          <div id="growthRiceFields" class="grain-fields">
-            <div class="form-group">
-              <label>分げつ数</label>
-              <input type="number" id="growthTillers" min="0" placeholder="例: 20">
-            </div>
-            <div class="form-group">
-              <label>倒伏の有無</label>
-              <select id="growthLodging">
-                <option value="">選択</option>
-                <option value="なし">なし</option>
-                <option value="軽微">軽微</option>
-                <option value="中程度">中程度</option>
-                <option value="甚大">甚大</option>
-              </select>
-            </div>
-          </div>
-          <div id="growthWheatFields" class="grain-fields">
-            <div class="form-group">
-              <label>赤かび病チェック</label>
-              <select id="growthFusarium">
-                <option value="">選択</option>
-                <option value="発生なし">発生なし</option>
-                <option value="要注意">要注意</option>
-                <option value="発生あり">発生あり</option>
-                <option value="多発">多発</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-group full">
-            <label>作業内容</label>
-            <select id="growthWork">
-              <option value="">選択</option>
-              <option value="施肥">施肥</option>
-              <option value="農薬散布">農薬散布</option>
-              <option value="灌水">灌水</option>
-              <option value="除草">除草</option>
-              <option value="誘引">誘引</option>
-              <option value="摘芯">摘芯</option>
-              <option value="摘果">摘果</option>
-              <option value="収穫">収穫</option>
-              <option value="土寄せ">土寄せ</option>
-              <option value="中耕">中耕</option>
-              <option value="その他">その他</option>
-            </select>
-          </div>
-          <div class="form-group full">
-            <label>メモ・気づき</label>
-            <textarea id="growthMemo" placeholder="観察した内容、気づいたことを記入"></textarea>
-          </div>
+          <div class="form-group"><label>作物 *</label><select id="growthCrop" required></select></div>
+          <div class="form-group"><label>日付 *</label><input type="date" id="growthDate" required></div>
+          <div class="form-group"><label>生育ステージ</label><select id="growthStage"><option value="">選択</option><option value="播種">播種</option><option value="発芽">発芽</option><option value="育苗">育苗</option><option value="定植">定植</option><option value="活着">活着</option><option value="生育初期">生育初期</option><option value="生育中期">生育中期</option><option value="生育後期">生育後期</option><option value="開花">開花</option><option value="結実">結実</option><option value="成熟">成熟</option><option value="収穫">収穫</option><option value="分げつ期">分げつ期</option><option value="幼穂形成期">幼穂形成期</option><option value="出穂期">出穂期</option><option value="登熟期">登熟期</option></select></div>
+          <div class="form-group"><label>草丈 (cm)</label><input type="number" id="growthHeight" step="0.1" min="0" placeholder="例: 25.5"></div>
+          <div class="form-group"><label>茎数 (本)</label><input type="number" id="growthStems" min="0" placeholder="例: 15"></div>
+          <div id="growthRiceFields" class="grain-fields"><div class="form-group"><label>分げつ数</label><input type="number" id="growthTillers" min="0" placeholder="例: 20"></div><div class="form-group"><label>倒伏の有無</label><select id="growthLodging"><option value="">選択</option><option value="なし">なし</option><option value="軽微">軽微</option><option value="中程度">中程度</option><option value="甚大">甚大</option></select></div></div>
+          <div id="growthWheatFields" class="grain-fields"><div class="form-group"><label>赤かび病チェック</label><select id="growthFusarium"><option value="">選択</option><option value="発生なし">発生なし</option><option value="要注意">要注意</option><option value="発生あり">発生あり</option><option value="多発">多発</option></select></div></div>
+          <div class="form-group full"><label>作業内容</label><select id="growthWork"><option value="">選択</option><option value="施肥">施肥</option><option value="農薬散布">農薬散布</option><option value="灌水">灌水</option><option value="除草">除草</option><option value="誘引">誘引</option><option value="摘芯">摘芯</option><option value="摘果">摘果</option><option value="収穫">収穫</option><option value="土寄せ">土寄せ</option><option value="中耕">中耕</option><option value="その他">その他</option></select></div>
+          <div class="form-group full"><label>メモ・気づき</label><textarea id="growthMemo" placeholder="観察した内容、気づいたことを記入"></textarea></div>
         </div>
         <input type="hidden" id="growthEditId">
-        <div class="btn-group no-print">
-          <button type="submit" class="btn btn-primary">記録する</button>
-          <button type="button" class="btn btn-outline" onclick="resetGrowthForm()">クリア</button>
-        </div>
+        <div class="btn-group no-print"><button type="submit" class="btn btn-primary">記録する</button><button type="button" class="btn btn-outline" onclick="resetGrowthForm()">クリア</button></div>
       </form>
     </div>
     <div class="card">
       <div class="card-title">生育記録一覧</div>
       <div class="filter-bar no-print">
-        <select id="growthFilterCrop" onchange="renderGrowthList()">
-          <option value="">全作物</option>
-        </select>
+        <select id="growthFilterCrop" onchange="renderGrowthList()"><option value="">全作物</option></select>
         <input type="date" id="growthFilterFrom" onchange="renderGrowthList()" title="開始日">
         <input type="date" id="growthFilterTo" onchange="renderGrowthList()" title="終了日">
       </div>
@@ -569,77 +263,30 @@ tr:hover { background: #f9f9f9; }
       <div class="card-title">施肥記録</div>
       <form id="fertForm">
         <div class="form-grid">
-          <div class="form-group">
-            <label>作物 *</label>
-            <select id="fertCrop" required></select>
-          </div>
-          <div class="form-group">
-            <label>施用日 *</label>
-            <input type="date" id="fertDate" required>
-          </div>
-          <div class="form-group">
-            <label>肥料名 *</label>
-            <input type="text" id="fertName" placeholder="例: 化成肥料 8-8-8" required>
-          </div>
-          <div class="form-group">
-            <label>施用量 *</label>
-            <input type="text" id="fertAmount" placeholder="例: 10kg/10a" required>
-          </div>
+          <div class="form-group"><label>作物 *</label><select id="fertCrop" required></select></div>
+          <div class="form-group"><label>施用日 *</label><input type="date" id="fertDate" required></div>
+          <div class="form-group"><label>肥料名 *</label><input type="text" id="fertName" placeholder="例: 化成肥料 8-8-8" required></div>
+          <div class="form-group"><label>施用量 *</label><input type="text" id="fertAmount" placeholder="例: 10kg/10a" required></div>
         </div>
         <input type="hidden" id="fertEditId">
-        <div class="btn-group no-print">
-          <button type="submit" class="btn btn-primary">登録</button>
-          <button type="button" class="btn btn-outline" onclick="resetFertForm()">クリア</button>
-        </div>
+        <div class="btn-group no-print"><button type="submit" class="btn btn-primary">登録</button><button type="button" class="btn btn-outline" onclick="resetFertForm()">クリア</button></div>
       </form>
     </div>
-    <div class="card">
-      <div class="card-title">施肥履歴</div>
-      <div class="filter-bar no-print">
-        <select id="fertFilterCrop" onchange="renderFertList()">
-          <option value="">全作物</option>
-        </select>
-      </div>
-      <div id="fertList"></div>
-    </div>
-
+    <div class="card"><div class="card-title">施肥履歴</div><div class="filter-bar no-print"><select id="fertFilterCrop" onchange="renderFertList()"><option value="">全作物</option></select></div><div id="fertList"></div></div>
     <div class="card">
       <div class="card-title">農薬散布記録</div>
       <form id="pestForm">
         <div class="form-grid">
-          <div class="form-group">
-            <label>作物 *</label>
-            <select id="pestCrop" required></select>
-          </div>
-          <div class="form-group">
-            <label>散布日 *</label>
-            <input type="date" id="pestDate" required>
-          </div>
-          <div class="form-group">
-            <label>農薬名 *</label>
-            <input type="text" id="pestName" placeholder="例: ダコニール1000" required>
-          </div>
-          <div class="form-group">
-            <label>希釈倍数</label>
-            <input type="text" id="pestDilution" placeholder="例: 1000倍">
-          </div>
+          <div class="form-group"><label>作物 *</label><select id="pestCrop" required></select></div>
+          <div class="form-group"><label>散布日 *</label><input type="date" id="pestDate" required></div>
+          <div class="form-group"><label>農薬名 *</label><input type="text" id="pestName" placeholder="例: ダコニール1000" required></div>
+          <div class="form-group"><label>希釈倍数</label><input type="text" id="pestDilution" placeholder="例: 1000倍"></div>
         </div>
         <input type="hidden" id="pestEditId">
-        <div class="btn-group no-print">
-          <button type="submit" class="btn btn-primary">登録</button>
-          <button type="button" class="btn btn-outline" onclick="resetPestForm()">クリア</button>
-        </div>
+        <div class="btn-group no-print"><button type="submit" class="btn btn-primary">登録</button><button type="button" class="btn btn-outline" onclick="resetPestForm()">クリア</button></div>
       </form>
     </div>
-    <div class="card">
-      <div class="card-title">農薬散布履歴</div>
-      <div class="filter-bar no-print">
-        <select id="pestFilterCrop" onchange="renderPestList()">
-          <option value="">全作物</option>
-        </select>
-      </div>
-      <div id="pestList"></div>
-    </div>
+    <div class="card"><div class="card-title">農薬散布履歴</div><div class="filter-bar no-print"><select id="pestFilterCrop" onchange="renderPestList()"><option value="">全作物</option></select></div><div id="pestList"></div></div>
   </div>
 
   <!-- グラフ -->
@@ -647,36 +294,19 @@ tr:hover { background: #f9f9f9; }
     <div class="card">
       <div class="card-title">生育データグラフ</div>
       <div class="filter-bar no-print">
-        <select id="chartCrop" onchange="updateChart()">
-          <option value="">作物を選択</option>
-        </select>
-        <select id="chartType" onchange="updateChart()">
-          <option value="height">草丈の推移</option>
-          <option value="stems">茎数の推移</option>
-          <option value="tillers">分げつ数の推移</option>
-        </select>
+        <select id="chartCrop" onchange="updateChart()"><option value="">作物を選択</option></select>
+        <select id="chartType" onchange="updateChart()"><option value="height">草丈の推移</option><option value="stems">茎数の推移</option><option value="tillers">分げつ数の推移</option></select>
       </div>
-      <div class="chart-container">
-        <canvas id="growthChart"></canvas>
-      </div>
+      <div class="chart-container"><canvas id="growthChart"></canvas></div>
     </div>
-    <div class="card">
-      <div class="card-title">作物タイプ別の登録数</div>
-      <div class="chart-container" style="max-height:300px;">
-        <canvas id="typeChart"></canvas>
-      </div>
-    </div>
+    <div class="card"><div class="card-title">作物タイプ別の登録数</div><div class="chart-container" style="max-height:300px;"><canvas id="typeChart"></canvas></div></div>
   </div>
 
   <!-- 生徒管理 -->
   <div id="students" class="tab-content">
     <div class="card">
       <div class="card-title">生徒別 担当作物・記録管理</div>
-      <div class="filter-bar no-print">
-        <select id="studentFilter" onchange="renderStudentView()">
-          <option value="">全生徒</option>
-        </select>
-      </div>
+      <div class="filter-bar no-print"><select id="studentFilter" onchange="renderStudentView()"><option value="">全生徒</option></select></div>
       <div id="studentView"></div>
     </div>
   </div>
@@ -686,22 +316,8 @@ tr:hover { background: #f9f9f9; }
     <div class="card">
       <div class="card-title">印刷・PDF出力</div>
       <div class="form-grid">
-        <div class="form-group">
-          <label>出力対象</label>
-          <select id="exportTarget">
-            <option value="all">全作物</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>出力内容</label>
-          <select id="exportContent">
-            <option value="summary">作物情報＋生育記録一覧</option>
-            <option value="growth">生育記録のみ</option>
-            <option value="fert">施肥履歴のみ</option>
-            <option value="pest">農薬散布履歴のみ</option>
-            <option value="full">すべて</option>
-          </select>
-        </div>
+        <div class="form-group"><label>出力対象</label><select id="exportTarget"><option value="all">全作物</option></select></div>
+        <div class="form-group"><label>出力内容</label><select id="exportContent"><option value="summary">作物情報＋生育記録一覧</option><option value="growth">生育記録のみ</option><option value="fert">施肥履歴のみ</option><option value="pest">農薬散布履歴のみ</option><option value="full">すべて</option></select></div>
       </div>
       <div class="btn-group no-print">
         <button class="btn btn-primary" onclick="generatePrintView()">プレビュー生成</button>
@@ -712,9 +328,9 @@ tr:hover { background: #f9f9f9; }
     <div id="printPreview"></div>
   </div>
 </main>
+</div>
 
 <div id="toast" class="toast"></div>
-
 <div id="confirmModal" class="modal-overlay">
   <div class="modal" style="max-width:400px;">
     <div class="modal-body confirm-dialog">
@@ -728,52 +344,239 @@ tr:hover { background: #f9f9f9; }
 </div>
 
 <script>
-// ===== Data Layer =====
-const KEYS = { crops: 'seiiku_crops', growth: 'seiiku_growth', fert: 'seiiku_fert', pest: 'seiiku_pest' };
+// ============================================================
+//  Firebase Configuration
+//  ★★★ 以下をあなたのFirebaseプロジェクトの値に書き換えてください ★★★
+// ============================================================
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "000000000000",
+  appId: "YOUR_APP_ID"
+};
 
-function loadData(key) {
-  try { return JSON.parse(localStorage.getItem(key)) || []; }
-  catch { return []; }
+// ============================================================
+//  Firebase / Fallback Initialization
+// ============================================================
+let db = null;
+let auth = null;
+let useFirebase = false;
+
+try {
+  if (firebaseConfig.apiKey && firebaseConfig.apiKey !== 'YOUR_API_KEY') {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    auth = firebase.auth();
+    useFirebase = true;
+  }
+} catch (e) {
+  console.warn('Firebase init failed, falling back to localStorage:', e);
 }
-function saveData(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+
+// ============================================================
+//  Data Layer — Firebase or localStorage
+// ============================================================
+const LS_KEYS = { crops: 'seiiku_crops', growth: 'seiiku_growth', fert: 'seiiku_fert', pest: 'seiiku_pest' };
+
+// In-memory cache (always used for rendering)
+let dataCache = { crops: [], growth: [], fert: [], pest: [] };
+
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 
-function getCrops() { return loadData(KEYS.crops); }
-function saveCrops(d) { saveData(KEYS.crops, d); }
-function getGrowth() { return loadData(KEYS.growth); }
-function saveGrowth(d) { saveData(KEYS.growth, d); }
-function getFert() { return loadData(KEYS.fert); }
-function saveFert(d) { saveData(KEYS.fert, d); }
-function getPest() { return loadData(KEYS.pest); }
-function savePest(d) { saveData(KEYS.pest, d); }
+// --- localStorage fallback ---
+function lsLoad(key) { try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; } }
+function lsSave(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
 
-// ===== Utility =====
+// --- Unified data access (reads from cache) ---
+function getCrops() { return dataCache.crops; }
+function getGrowth() { return dataCache.growth; }
+function getFert() { return dataCache.fert; }
+function getPest() { return dataCache.pest; }
+
+// --- Save functions ---
+async function saveCrops(arr) {
+  dataCache.crops = arr;
+  if (!useFirebase) { lsSave(LS_KEYS.crops, arr); return; }
+}
+async function saveGrowth(arr) {
+  dataCache.growth = arr;
+  if (!useFirebase) { lsSave(LS_KEYS.growth, arr); return; }
+}
+async function saveFert(arr) {
+  dataCache.fert = arr;
+  if (!useFirebase) { lsSave(LS_KEYS.fert, arr); return; }
+}
+async function savePest(arr) {
+  dataCache.pest = arr;
+  if (!useFirebase) { lsSave(LS_KEYS.pest, arr); return; }
+}
+
+// --- Firestore CRUD helpers ---
+async function fsAdd(collection, data) {
+  if (!useFirebase) return;
+  await db.collection(collection).doc(data.id).set(data);
+}
+async function fsUpdate(collection, id, data) {
+  if (!useFirebase) return;
+  await db.collection(collection).doc(id).set(data);
+}
+async function fsDelete(collection, id) {
+  if (!useFirebase) return;
+  await db.collection(collection).doc(id).delete();
+}
+
+// --- Load all data (initial fetch or from localStorage) ---
+async function loadAllData() {
+  if (!useFirebase) {
+    dataCache.crops = lsLoad(LS_KEYS.crops);
+    dataCache.growth = lsLoad(LS_KEYS.growth);
+    dataCache.fert = lsLoad(LS_KEYS.fert);
+    dataCache.pest = lsLoad(LS_KEYS.pest);
+    return;
+  }
+  // Firestore: set up real-time listeners
+  return new Promise(resolve => {
+    let loaded = 0;
+    const check = () => { if (++loaded >= 4) resolve(); };
+
+    db.collection('crops').onSnapshot(snap => {
+      dataCache.crops = snap.docs.map(d => d.data());
+      renderAll();
+      check();
+    }, check);
+    db.collection('growth').onSnapshot(snap => {
+      dataCache.growth = snap.docs.map(d => d.data());
+      renderAll();
+      check();
+    }, check);
+    db.collection('fertilizers').onSnapshot(snap => {
+      dataCache.fert = snap.docs.map(d => d.data());
+      renderAll();
+      check();
+    }, check);
+    db.collection('pesticides').onSnapshot(snap => {
+      dataCache.pest = snap.docs.map(d => d.data());
+      renderAll();
+      check();
+    }, check);
+  });
+}
+
+// ============================================================
+//  Authentication
+// ============================================================
+function toggleAuthMode() {
+  const login = document.getElementById('loginFormArea');
+  const reg = document.getElementById('registerFormArea');
+  login.style.display = login.style.display === 'none' ? '' : 'none';
+  reg.style.display = reg.style.display === 'none' ? '' : 'none';
+  document.getElementById('loginError').textContent = '';
+  document.getElementById('regError').textContent = '';
+}
+
+async function doLogin() {
+  if (!useFirebase) { enterApp('ローカルユーザー'); return; }
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  if (!email || !pass) { errEl.textContent = 'メールとパスワードを入力してください'; return; }
+  try {
+    document.getElementById('loginBtn').disabled = true;
+    await auth.signInWithEmailAndPassword(email, pass);
+  } catch (e) {
+    errEl.textContent = authErrorMsg(e.code);
+    document.getElementById('loginBtn').disabled = false;
+  }
+}
+
+async function doRegister() {
+  if (!useFirebase) { enterApp('ローカルユーザー'); return; }
+  const name = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const pass = document.getElementById('regPassword').value;
+  const errEl = document.getElementById('regError');
+  if (!name || !email || !pass) { errEl.textContent = '全項目を入力してください'; return; }
+  if (pass.length < 6) { errEl.textContent = 'パスワードは6文字以上で入力してください'; return; }
+  try {
+    document.getElementById('regBtn').disabled = true;
+    const cred = await auth.createUserWithEmailAndPassword(email, pass);
+    await cred.user.updateProfile({ displayName: name });
+  } catch (e) {
+    errEl.textContent = authErrorMsg(e.code);
+    document.getElementById('regBtn').disabled = false;
+  }
+}
+
+function doLogout() {
+  if (useFirebase) { auth.signOut(); }
+  else {
+    document.getElementById('appScreen').style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+  }
+}
+
+function authErrorMsg(code) {
+  const map = {
+    'auth/invalid-email': 'メールアドレスの形式が正しくありません',
+    'auth/user-not-found': 'このメールアドレスは登録されていません',
+    'auth/wrong-password': 'パスワードが間違っています',
+    'auth/invalid-credential': 'メールアドレスまたはパスワードが間違っています',
+    'auth/email-already-in-use': 'このメールアドレスは既に使用されています',
+    'auth/weak-password': 'パスワードが弱すぎます（6文字以上）',
+    'auth/too-many-requests': 'ログイン試行回数が多すぎます。しばらく待ってください',
+  };
+  return map[code] || `認証エラー (${code})`;
+}
+
+async function enterApp(displayName) {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appScreen').style.display = '';
+  document.getElementById('displayUserName').textContent = displayName;
+  if (!useFirebase) document.getElementById('setupBanner').style.display = '';
+  await loadAllData();
+  initApp();
+}
+
+// Auth state listener
+if (useFirebase) {
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      enterApp(user.displayName || user.email);
+    } else {
+      document.getElementById('appScreen').style.display = 'none';
+      document.getElementById('loginScreen').style.display = 'flex';
+      document.getElementById('loginBtn').disabled = false;
+      document.getElementById('regBtn').disabled = false;
+    }
+  });
+} else {
+  // No Firebase: show login screen but allow entry without real auth
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+
+// ============================================================
+//  Utility
+// ============================================================
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
 }
-
 function formatDate(d) {
   if (!d) return '-';
-  const parts = d.split('-');
-  if (parts.length === 3) return `${parts[0]}/${parts[1]}/${parts[2]}`;
-  return d;
+  const p = d.split('-');
+  return p.length === 3 ? `${p[0]}/${p[1]}/${p[2]}` : d;
 }
-
-function typeName(t) {
-  return { rice: '水稲', wheat: '麦', vegetable: '野菜類' }[t] || t;
-}
-
+function typeName(t) { return { rice: '水稲', wheat: '麦', vegetable: '野菜類' }[t] || t; }
 function typeBadge(t) {
   const cls = { rice: 'badge-rice', wheat: 'badge-wheat', vegetable: 'badge-veg' }[t] || '';
   return `<span class="badge ${cls}">${typeName(t)}</span>`;
 }
-
-function cropLabel(crop) {
-  return `${crop.name}（${crop.variety || '-'}）[${crop.fieldNo}] - ${crop.studentName}`;
-}
+function cropLabel(c) { return `${c.name}（${c.variety || '-'}）[${c.fieldNo}] - ${c.studentName}`; }
+function esc(str) { if (!str) return ''; const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
 
 let confirmCallback = null;
 function showConfirm(msg, cb) {
@@ -782,12 +585,11 @@ function showConfirm(msg, cb) {
   confirmCallback = cb;
   document.getElementById('confirmYes').onclick = () => { closeConfirm(); if (confirmCallback) confirmCallback(); };
 }
-function closeConfirm() {
-  document.getElementById('confirmModal').classList.remove('show');
-  confirmCallback = null;
-}
+function closeConfirm() { document.getElementById('confirmModal').classList.remove('show'); confirmCallback = null; }
 
-// ===== Tab Navigation =====
+// ============================================================
+//  Tab Navigation
+// ============================================================
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -800,59 +602,47 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   });
 });
 
-// ===== Crop Type Toggle =====
+// Crop type toggle
 document.getElementById('cropType').addEventListener('change', function() {
   document.getElementById('riceFields').classList.toggle('show', this.value === 'rice');
   document.getElementById('wheatFields').classList.toggle('show', this.value === 'wheat');
 });
-
 document.getElementById('growthCrop').addEventListener('change', function() {
-  const crops = getCrops();
-  const crop = crops.find(c => c.id === this.value);
-  const isRice = crop && crop.type === 'rice';
-  const isWheat = crop && crop.type === 'wheat';
-  document.getElementById('growthRiceFields').classList.toggle('show', isRice);
-  document.getElementById('growthWheatFields').classList.toggle('show', isWheat);
+  const crop = getCrops().find(c => c.id === this.value);
+  document.getElementById('growthRiceFields').classList.toggle('show', crop && crop.type === 'rice');
+  document.getElementById('growthWheatFields').classList.toggle('show', crop && crop.type === 'wheat');
 });
 
-// ===== Populate Selects =====
+// ============================================================
+//  Populate Selects
+// ============================================================
 function populateCropSelects() {
   const crops = getCrops();
-  const selects = ['growthCrop', 'fertCrop', 'pestCrop', 'growthFilterCrop', 'fertFilterCrop', 'pestFilterCrop', 'chartCrop', 'studentFilter', 'exportTarget'];
-  selects.forEach(id => {
+  ['growthCrop','fertCrop','pestCrop','growthFilterCrop','fertFilterCrop','pestFilterCrop','chartCrop','exportTarget'].forEach(id => {
     const sel = document.getElementById(id);
     if (!sel) return;
     const val = sel.value;
-    const isFilter = id.includes('Filter') || id === 'chartCrop' || id === 'studentFilter' || id === 'exportTarget';
-    const firstOpt = sel.querySelector('option');
+    const isFilter = id.includes('Filter') || id === 'chartCrop' || id === 'exportTarget';
+    const first = sel.querySelector('option');
     sel.innerHTML = '';
-    if (isFilter && firstOpt) sel.appendChild(firstOpt);
-    crops.forEach(c => {
-      const opt = document.createElement('option');
-      opt.value = c.id;
-      opt.textContent = cropLabel(c);
-      sel.appendChild(opt);
-    });
+    if (isFilter && first) sel.appendChild(first);
+    crops.forEach(c => { const o = document.createElement('option'); o.value = c.id; o.textContent = cropLabel(c); sel.appendChild(o); });
     if (val) sel.value = val;
   });
-  // student filter
   const sf = document.getElementById('studentFilter');
   if (sf) {
-    const students = [...new Set(crops.map(c => c.studentName))].sort();
+    const sts = [...new Set(crops.map(c => c.studentName))].sort();
     sf.innerHTML = '<option value="">全生徒</option>';
-    students.forEach(s => {
-      const opt = document.createElement('option');
-      opt.value = s;
-      opt.textContent = s;
-      sf.appendChild(opt);
-    });
+    sts.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sf.appendChild(o); });
   }
 }
 
-// ===== Crop Form =====
-document.getElementById('cropForm').addEventListener('submit', function(e) {
+// ============================================================
+//  Crop CRUD
+// ============================================================
+document.getElementById('cropForm').addEventListener('submit', async function(e) {
   e.preventDefault();
-  const crops = getCrops();
+  const crops = getCrops().slice();
   const editId = document.getElementById('cropEditId').value;
   const data = {
     id: editId || genId(),
@@ -867,102 +657,79 @@ document.getElementById('cropForm').addEventListener('submit', function(e) {
     headingDate: document.getElementById('cropHeadingDate').value,
     earDate: document.getElementById('cropEarDate').value,
   };
-  if (editId) {
-    const idx = crops.findIndex(c => c.id === editId);
-    if (idx >= 0) crops[idx] = data;
-  } else {
-    crops.push(data);
-  }
-  saveCrops(crops);
+  if (editId) { const idx = crops.findIndex(c => c.id === editId); if (idx >= 0) crops[idx] = data; }
+  else crops.push(data);
+  await saveCrops(crops);
+  if (useFirebase) await fsUpdate('crops', data.id, data);
   resetCropForm();
-  renderCropList();
-  populateCropSelects();
+  renderAll();
   showToast(editId ? '作物情報を更新しました' : '作物を登録しました');
 });
-
 function resetCropForm() {
   document.getElementById('cropForm').reset();
   document.getElementById('cropEditId').value = '';
   document.getElementById('riceFields').classList.remove('show');
   document.getElementById('wheatFields').classList.remove('show');
 }
-
 function editCrop(id) {
-  const crop = getCrops().find(c => c.id === id);
-  if (!crop) return;
-  document.getElementById('cropEditId').value = crop.id;
-  document.getElementById('cropType').value = crop.type;
+  const c = getCrops().find(x => x.id === id); if (!c) return;
+  document.getElementById('cropEditId').value = c.id;
+  document.getElementById('cropType').value = c.type;
   document.getElementById('cropType').dispatchEvent(new Event('change'));
-  document.getElementById('cropName').value = crop.name;
-  document.getElementById('cropVariety').value = crop.variety || '';
-  document.getElementById('cropField').value = crop.fieldNo;
-  document.getElementById('cropStudent').value = crop.studentName;
-  document.getElementById('cropSowDate').value = crop.sowDate || '';
-  document.getElementById('cropPlantDate').value = crop.plantDate || '';
-  document.getElementById('cropHarvestDate').value = crop.harvestDate || '';
-  document.getElementById('cropHeadingDate').value = crop.headingDate || '';
-  document.getElementById('cropEarDate').value = crop.earDate || '';
+  document.getElementById('cropName').value = c.name;
+  document.getElementById('cropVariety').value = c.variety || '';
+  document.getElementById('cropField').value = c.fieldNo;
+  document.getElementById('cropStudent').value = c.studentName;
+  document.getElementById('cropSowDate').value = c.sowDate || '';
+  document.getElementById('cropPlantDate').value = c.plantDate || '';
+  document.getElementById('cropHarvestDate').value = c.harvestDate || '';
+  document.getElementById('cropHeadingDate').value = c.headingDate || '';
+  document.getElementById('cropEarDate').value = c.earDate || '';
   document.querySelector('[data-tab="crops"]').click();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-
 function deleteCrop(id) {
-  showConfirm('この作物と関連する全記録を削除しますか？', () => {
-    let crops = getCrops().filter(c => c.id !== id);
-    saveCrops(crops);
-    let growth = getGrowth().filter(g => g.cropId !== id);
-    saveGrowth(growth);
-    let fert = getFert().filter(f => f.cropId !== id);
-    saveFert(fert);
-    let pest = getPest().filter(p => p.cropId !== id);
-    savePest(pest);
-    renderCropList();
-    populateCropSelects();
+  showConfirm('この作物と関連する全記録を削除しますか？', async () => {
+    await saveCrops(getCrops().filter(c => c.id !== id));
+    const gDel = getGrowth().filter(g => g.cropId === id);
+    const fDel = getFert().filter(f => f.cropId === id);
+    const pDel = getPest().filter(p => p.cropId === id);
+    await saveGrowth(getGrowth().filter(g => g.cropId !== id));
+    await saveFert(getFert().filter(f => f.cropId !== id));
+    await savePest(getPest().filter(p => p.cropId !== id));
+    if (useFirebase) {
+      await fsDelete('crops', id);
+      for (const g of gDel) await fsDelete('growth', g.id);
+      for (const f of fDel) await fsDelete('fertilizers', f.id);
+      for (const p of pDel) await fsDelete('pesticides', p.id);
+    }
+    renderAll();
     showToast('作物を削除しました');
   });
 }
-
 function renderCropList() {
   const crops = getCrops();
-  const filterType = document.getElementById('cropFilterType').value;
-  const filterText = document.getElementById('cropFilterText').value.toLowerCase();
+  const ft = document.getElementById('cropFilterType').value;
+  const fx = document.getElementById('cropFilterText').value.toLowerCase();
   const filtered = crops.filter(c => {
-    if (filterType && c.type !== filterType) return false;
-    if (filterText) {
-      const searchStr = `${c.name} ${c.variety} ${c.fieldNo} ${c.studentName}`.toLowerCase();
-      if (!searchStr.includes(filterText)) return false;
-    }
+    if (ft && c.type !== ft) return false;
+    if (fx && !`${c.name} ${c.variety} ${c.fieldNo} ${c.studentName}`.toLowerCase().includes(fx)) return false;
     return true;
   });
   const el = document.getElementById('cropList');
-  if (filtered.length === 0) {
-    el.innerHTML = '<div class="empty-state"><div class="icon">🌱</div><p>登録された作物がありません</p></div>';
-    return;
-  }
-  let html = '<div class="table-wrap"><table><thead><tr><th>タイプ</th><th>作物名</th><th>品種</th><th>圃場</th><th>担当</th><th>播種日</th><th>予定収穫日</th><th class="no-print">操作</th></tr></thead><tbody>';
-  filtered.forEach(c => {
-    html += `<tr>
-      <td>${typeBadge(c.type)}</td>
-      <td>${esc(c.name)}</td>
-      <td>${esc(c.variety || '-')}</td>
-      <td>${esc(c.fieldNo)}</td>
-      <td>${esc(c.studentName)}</td>
-      <td>${formatDate(c.sowDate)}</td>
-      <td>${formatDate(c.harvestDate)}</td>
-      <td class="no-print">
-        <button class="btn btn-outline btn-sm" onclick="editCrop('${c.id}')">編集</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteCrop('${c.id}')">削除</button>
-      </td>
-    </tr>`;
-  });
-  html += '</tbody></table></div>';
-  el.innerHTML = html;
+  if (!filtered.length) { el.innerHTML = '<div class="empty-state"><div class="icon">🌱</div><p>登録された作物がありません</p></div>'; return; }
+  let h = '<div class="table-wrap"><table><thead><tr><th>タイプ</th><th>作物名</th><th>品種</th><th>圃場</th><th>担当</th><th>播種日</th><th>予定収穫日</th><th class="no-print">操作</th></tr></thead><tbody>';
+  filtered.forEach(c => { h += `<tr><td>${typeBadge(c.type)}</td><td>${esc(c.name)}</td><td>${esc(c.variety||'-')}</td><td>${esc(c.fieldNo)}</td><td>${esc(c.studentName)}</td><td>${formatDate(c.sowDate)}</td><td>${formatDate(c.harvestDate)}</td><td class="no-print"><button class="btn btn-outline btn-sm" onclick="editCrop('${c.id}')">編集</button> <button class="btn btn-danger btn-sm" onclick="deleteCrop('${c.id}')">削除</button></td></tr>`; });
+  h += '</tbody></table></div>';
+  el.innerHTML = h;
 }
 
-// ===== Growth Form =====
-document.getElementById('growthForm').addEventListener('submit', function(e) {
+// ============================================================
+//  Growth CRUD
+// ============================================================
+document.getElementById('growthForm').addEventListener('submit', async function(e) {
   e.preventDefault();
-  const records = getGrowth();
+  const records = getGrowth().slice();
   const editId = document.getElementById('growthEditId').value;
   const data = {
     id: editId || genId(),
@@ -977,576 +744,303 @@ document.getElementById('growthForm').addEventListener('submit', function(e) {
     work: document.getElementById('growthWork').value,
     memo: document.getElementById('growthMemo').value.trim(),
   };
-  if (editId) {
-    const idx = records.findIndex(r => r.id === editId);
-    if (idx >= 0) records[idx] = data;
-  } else {
-    records.push(data);
-  }
-  saveGrowth(records);
-  resetGrowthForm();
-  renderGrowthList();
+  if (editId) { const i = records.findIndex(r => r.id === editId); if (i >= 0) records[i] = data; }
+  else records.push(data);
+  await saveGrowth(records);
+  if (useFirebase) await fsUpdate('growth', data.id, data);
+  resetGrowthForm(); renderGrowthList();
   showToast(editId ? '記録を更新しました' : '生育記録を保存しました');
 });
-
 function resetGrowthForm() {
   document.getElementById('growthForm').reset();
   document.getElementById('growthEditId').value = '';
   document.getElementById('growthRiceFields').classList.remove('show');
   document.getElementById('growthWheatFields').classList.remove('show');
 }
-
 function editGrowth(id) {
-  const rec = getGrowth().find(r => r.id === id);
-  if (!rec) return;
-  document.getElementById('growthEditId').value = rec.id;
-  document.getElementById('growthCrop').value = rec.cropId;
+  const r = getGrowth().find(x => x.id === id); if (!r) return;
+  document.getElementById('growthEditId').value = r.id;
+  document.getElementById('growthCrop').value = r.cropId;
   document.getElementById('growthCrop').dispatchEvent(new Event('change'));
-  document.getElementById('growthDate').value = rec.date;
-  document.getElementById('growthStage').value = rec.stage || '';
-  document.getElementById('growthHeight').value = rec.height || '';
-  document.getElementById('growthStems').value = rec.stems || '';
-  document.getElementById('growthTillers').value = rec.tillers || '';
-  document.getElementById('growthLodging').value = rec.lodging || '';
-  document.getElementById('growthFusarium').value = rec.fusarium || '';
-  document.getElementById('growthWork').value = rec.work || '';
-  document.getElementById('growthMemo').value = rec.memo || '';
+  document.getElementById('growthDate').value = r.date;
+  document.getElementById('growthStage').value = r.stage || '';
+  document.getElementById('growthHeight').value = r.height || '';
+  document.getElementById('growthStems').value = r.stems || '';
+  document.getElementById('growthTillers').value = r.tillers || '';
+  document.getElementById('growthLodging').value = r.lodging || '';
+  document.getElementById('growthFusarium').value = r.fusarium || '';
+  document.getElementById('growthWork').value = r.work || '';
+  document.getElementById('growthMemo').value = r.memo || '';
   document.querySelector('[data-tab="growth"]').click();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-
 function deleteGrowth(id) {
-  showConfirm('この記録を削除しますか？', () => {
-    saveGrowth(getGrowth().filter(r => r.id !== id));
-    renderGrowthList();
-    showToast('記録を削除しました');
+  showConfirm('この記録を削除しますか？', async () => {
+    await saveGrowth(getGrowth().filter(r => r.id !== id));
+    if (useFirebase) await fsDelete('growth', id);
+    renderGrowthList(); showToast('記録を削除しました');
   });
 }
-
 function renderGrowthList() {
-  const records = getGrowth();
-  const crops = getCrops();
-  const filterCrop = document.getElementById('growthFilterCrop').value;
-  const filterFrom = document.getElementById('growthFilterFrom').value;
-  const filterTo = document.getElementById('growthFilterTo').value;
-  const filtered = records.filter(r => {
-    if (filterCrop && r.cropId !== filterCrop) return false;
-    if (filterFrom && r.date < filterFrom) return false;
-    if (filterTo && r.date > filterTo) return false;
-    return true;
-  }).sort((a, b) => b.date.localeCompare(a.date));
-
+  const records = getGrowth(); const crops = getCrops();
+  const fc = document.getElementById('growthFilterCrop').value;
+  const ff = document.getElementById('growthFilterFrom').value;
+  const ft = document.getElementById('growthFilterTo').value;
+  const filtered = records.filter(r => { if (fc && r.cropId !== fc) return false; if (ff && r.date < ff) return false; if (ft && r.date > ft) return false; return true; }).sort((a,b) => b.date.localeCompare(a.date));
   const el = document.getElementById('growthList');
-  if (filtered.length === 0) {
-    el.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>生育記録がありません</p></div>';
-    return;
-  }
-
-  let html = '';
+  if (!filtered.length) { el.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>生育記録がありません</p></div>'; return; }
+  let h = '';
   filtered.forEach(r => {
     const crop = crops.find(c => c.id === r.cropId);
-    const cName = crop ? `${crop.name}（${crop.fieldNo}）` : '不明';
-    let details = [];
-    if (r.stage) details.push(`ステージ: ${r.stage}`);
-    if (r.height) details.push(`草丈: ${r.height}cm`);
-    if (r.stems) details.push(`茎数: ${r.stems}本`);
-    if (r.tillers) details.push(`分げつ数: ${r.tillers}`);
-    if (r.lodging) details.push(`倒伏: ${r.lodging}`);
-    if (r.fusarium) details.push(`赤かび病: ${r.fusarium}`);
-    if (r.work) details.push(`作業: ${r.work}`);
-
-    html += `<div class="record-card">
-      <div class="date">${formatDate(r.date)} - ${esc(cName)}</div>
-      <div class="meta">${details.map(d => esc(d)).join(' ／ ')}</div>
-      ${r.memo ? `<div class="content">${esc(r.memo)}</div>` : ''}
-      <div class="btn-group no-print">
-        <button class="btn btn-outline btn-sm" onclick="editGrowth('${r.id}')">編集</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteGrowth('${r.id}')">削除</button>
-      </div>
-    </div>`;
+    const cn = crop ? `${crop.name}（${crop.fieldNo}）` : '不明';
+    let d = [];
+    if (r.stage) d.push(`ステージ: ${r.stage}`); if (r.height) d.push(`草丈: ${r.height}cm`); if (r.stems) d.push(`茎数: ${r.stems}本`);
+    if (r.tillers) d.push(`分げつ数: ${r.tillers}`); if (r.lodging) d.push(`倒伏: ${r.lodging}`); if (r.fusarium) d.push(`赤かび病: ${r.fusarium}`); if (r.work) d.push(`作業: ${r.work}`);
+    h += `<div class="record-card"><div class="date">${formatDate(r.date)} - ${esc(cn)}</div><div class="meta">${d.map(x=>esc(x)).join(' ／ ')}</div>${r.memo?`<div class="content">${esc(r.memo)}</div>`:''}<div class="btn-group no-print"><button class="btn btn-outline btn-sm" onclick="editGrowth('${r.id}')">編集</button> <button class="btn btn-danger btn-sm" onclick="deleteGrowth('${r.id}')">削除</button></div></div>`;
   });
-  el.innerHTML = html;
+  el.innerHTML = h;
 }
 
-// ===== Fertilizer Form =====
-document.getElementById('fertForm').addEventListener('submit', function(e) {
+// ============================================================
+//  Fertilizer CRUD
+// ============================================================
+document.getElementById('fertForm').addEventListener('submit', async function(e) {
   e.preventDefault();
-  const records = getFert();
+  const records = getFert().slice();
   const editId = document.getElementById('fertEditId').value;
-  const data = {
-    id: editId || genId(),
-    cropId: document.getElementById('fertCrop').value,
-    date: document.getElementById('fertDate').value,
-    name: document.getElementById('fertName').value.trim(),
-    amount: document.getElementById('fertAmount').value.trim(),
-  };
-  if (editId) {
-    const idx = records.findIndex(r => r.id === editId);
-    if (idx >= 0) records[idx] = data;
-  } else {
-    records.push(data);
-  }
-  saveFert(records);
-  resetFertForm();
-  renderFertList();
+  const data = { id: editId || genId(), cropId: document.getElementById('fertCrop').value, date: document.getElementById('fertDate').value, name: document.getElementById('fertName').value.trim(), amount: document.getElementById('fertAmount').value.trim() };
+  if (editId) { const i = records.findIndex(r => r.id === editId); if (i >= 0) records[i] = data; } else records.push(data);
+  await saveFert(records);
+  if (useFirebase) await fsUpdate('fertilizers', data.id, data);
+  resetFertForm(); renderFertList();
   showToast(editId ? '施肥記録を更新しました' : '施肥記録を登録しました');
 });
-
-function resetFertForm() {
-  document.getElementById('fertForm').reset();
-  document.getElementById('fertEditId').value = '';
-}
-
+function resetFertForm() { document.getElementById('fertForm').reset(); document.getElementById('fertEditId').value = ''; }
 function editFert(id) {
-  const rec = getFert().find(r => r.id === id);
-  if (!rec) return;
-  document.getElementById('fertEditId').value = rec.id;
-  document.getElementById('fertCrop').value = rec.cropId;
-  document.getElementById('fertDate').value = rec.date;
-  document.getElementById('fertName').value = rec.name;
-  document.getElementById('fertAmount').value = rec.amount;
-  document.querySelector('[data-tab="work"]').click();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  const r = getFert().find(x => x.id === id); if (!r) return;
+  document.getElementById('fertEditId').value = r.id; document.getElementById('fertCrop').value = r.cropId;
+  document.getElementById('fertDate').value = r.date; document.getElementById('fertName').value = r.name; document.getElementById('fertAmount').value = r.amount;
+  document.querySelector('[data-tab="work"]').click(); window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-
 function deleteFert(id) {
-  showConfirm('この施肥記録を削除しますか？', () => {
-    saveFert(getFert().filter(r => r.id !== id));
-    renderFertList();
-    showToast('施肥記録を削除しました');
+  showConfirm('この施肥記録を削除しますか？', async () => {
+    await saveFert(getFert().filter(r => r.id !== id));
+    if (useFirebase) await fsDelete('fertilizers', id);
+    renderFertList(); showToast('施肥記録を削除しました');
   });
 }
-
 function renderFertList() {
-  const records = getFert();
-  const crops = getCrops();
-  const filterCrop = document.getElementById('fertFilterCrop').value;
-  const filtered = records.filter(r => !filterCrop || r.cropId === filterCrop)
-    .sort((a, b) => b.date.localeCompare(a.date));
-
+  const records = getFert(); const crops = getCrops();
+  const fc = document.getElementById('fertFilterCrop').value;
+  const filtered = records.filter(r => !fc || r.cropId === fc).sort((a,b) => b.date.localeCompare(a.date));
   const el = document.getElementById('fertList');
-  if (filtered.length === 0) {
-    el.innerHTML = '<div class="empty-state"><div class="icon">🧪</div><p>施肥記録がありません</p></div>';
-    return;
-  }
-  let html = '<div class="table-wrap"><table><thead><tr><th>施用日</th><th>作物</th><th>肥料名</th><th>施用量</th><th class="no-print">操作</th></tr></thead><tbody>';
-  filtered.forEach(r => {
-    const crop = crops.find(c => c.id === r.cropId);
-    html += `<tr>
-      <td>${formatDate(r.date)}</td>
-      <td>${crop ? esc(crop.name) + '（' + esc(crop.fieldNo) + '）' : '不明'}</td>
-      <td>${esc(r.name)}</td>
-      <td>${esc(r.amount)}</td>
-      <td class="no-print">
-        <button class="btn btn-outline btn-sm" onclick="editFert('${r.id}')">編集</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteFert('${r.id}')">削除</button>
-      </td>
-    </tr>`;
-  });
-  html += '</tbody></table></div>';
-  el.innerHTML = html;
+  if (!filtered.length) { el.innerHTML = '<div class="empty-state"><div class="icon">🧪</div><p>施肥記録がありません</p></div>'; return; }
+  let h = '<div class="table-wrap"><table><thead><tr><th>施用日</th><th>作物</th><th>肥料名</th><th>施用量</th><th class="no-print">操作</th></tr></thead><tbody>';
+  filtered.forEach(r => { const crop = crops.find(c => c.id === r.cropId); h += `<tr><td>${formatDate(r.date)}</td><td>${crop?esc(crop.name)+'（'+esc(crop.fieldNo)+'）':'不明'}</td><td>${esc(r.name)}</td><td>${esc(r.amount)}</td><td class="no-print"><button class="btn btn-outline btn-sm" onclick="editFert('${r.id}')">編集</button> <button class="btn btn-danger btn-sm" onclick="deleteFert('${r.id}')">削除</button></td></tr>`; });
+  h += '</tbody></table></div>'; el.innerHTML = h;
 }
 
-// ===== Pesticide Form =====
-document.getElementById('pestForm').addEventListener('submit', function(e) {
+// ============================================================
+//  Pesticide CRUD
+// ============================================================
+document.getElementById('pestForm').addEventListener('submit', async function(e) {
   e.preventDefault();
-  const records = getPest();
+  const records = getPest().slice();
   const editId = document.getElementById('pestEditId').value;
-  const data = {
-    id: editId || genId(),
-    cropId: document.getElementById('pestCrop').value,
-    date: document.getElementById('pestDate').value,
-    name: document.getElementById('pestName').value.trim(),
-    dilution: document.getElementById('pestDilution').value.trim(),
-  };
-  if (editId) {
-    const idx = records.findIndex(r => r.id === editId);
-    if (idx >= 0) records[idx] = data;
-  } else {
-    records.push(data);
-  }
-  savePest(records);
-  resetPestForm();
-  renderPestList();
+  const data = { id: editId || genId(), cropId: document.getElementById('pestCrop').value, date: document.getElementById('pestDate').value, name: document.getElementById('pestName').value.trim(), dilution: document.getElementById('pestDilution').value.trim() };
+  if (editId) { const i = records.findIndex(r => r.id === editId); if (i >= 0) records[i] = data; } else records.push(data);
+  await savePest(records);
+  if (useFirebase) await fsUpdate('pesticides', data.id, data);
+  resetPestForm(); renderPestList();
   showToast(editId ? '農薬記録を更新しました' : '農薬散布記録を登録しました');
 });
-
-function resetPestForm() {
-  document.getElementById('pestForm').reset();
-  document.getElementById('pestEditId').value = '';
-}
-
+function resetPestForm() { document.getElementById('pestForm').reset(); document.getElementById('pestEditId').value = ''; }
 function editPest(id) {
-  const rec = getPest().find(r => r.id === id);
-  if (!rec) return;
-  document.getElementById('pestEditId').value = rec.id;
-  document.getElementById('pestCrop').value = rec.cropId;
-  document.getElementById('pestDate').value = rec.date;
-  document.getElementById('pestName').value = rec.name;
-  document.getElementById('pestDilution').value = rec.dilution || '';
+  const r = getPest().find(x => x.id === id); if (!r) return;
+  document.getElementById('pestEditId').value = r.id; document.getElementById('pestCrop').value = r.cropId;
+  document.getElementById('pestDate').value = r.date; document.getElementById('pestName').value = r.name; document.getElementById('pestDilution').value = r.dilution || '';
   document.querySelector('[data-tab="work"]').click();
-  const pestSection = document.getElementById('pestForm').closest('.card');
-  setTimeout(() => pestSection.scrollIntoView({ behavior: 'smooth' }), 100);
+  const s = document.getElementById('pestForm').closest('.card'); setTimeout(() => s.scrollIntoView({ behavior: 'smooth' }), 100);
 }
-
 function deletePest(id) {
-  showConfirm('この農薬散布記録を削除しますか？', () => {
-    savePest(getPest().filter(r => r.id !== id));
-    renderPestList();
-    showToast('農薬散布記録を削除しました');
+  showConfirm('この農薬散布記録を削除しますか？', async () => {
+    await savePest(getPest().filter(r => r.id !== id));
+    if (useFirebase) await fsDelete('pesticides', id);
+    renderPestList(); showToast('農薬散布記録を削除しました');
   });
 }
-
 function renderPestList() {
-  const records = getPest();
-  const crops = getCrops();
-  const filterCrop = document.getElementById('pestFilterCrop').value;
-  const filtered = records.filter(r => !filterCrop || r.cropId === filterCrop)
-    .sort((a, b) => b.date.localeCompare(a.date));
-
+  const records = getPest(); const crops = getCrops();
+  const fc = document.getElementById('pestFilterCrop').value;
+  const filtered = records.filter(r => !fc || r.cropId === fc).sort((a,b) => b.date.localeCompare(a.date));
   const el = document.getElementById('pestList');
-  if (filtered.length === 0) {
-    el.innerHTML = '<div class="empty-state"><div class="icon">🔬</div><p>農薬散布記録がありません</p></div>';
-    return;
-  }
-  let html = '<div class="table-wrap"><table><thead><tr><th>散布日</th><th>作物</th><th>農薬名</th><th>希釈倍数</th><th class="no-print">操作</th></tr></thead><tbody>';
-  filtered.forEach(r => {
-    const crop = crops.find(c => c.id === r.cropId);
-    html += `<tr>
-      <td>${formatDate(r.date)}</td>
-      <td>${crop ? esc(crop.name) + '（' + esc(crop.fieldNo) + '）' : '不明'}</td>
-      <td>${esc(r.name)}</td>
-      <td>${esc(r.dilution || '-')}</td>
-      <td class="no-print">
-        <button class="btn btn-outline btn-sm" onclick="editPest('${r.id}')">編集</button>
-        <button class="btn btn-danger btn-sm" onclick="deletePest('${r.id}')">削除</button>
-      </td>
-    </tr>`;
-  });
-  html += '</tbody></table></div>';
-  el.innerHTML = html;
+  if (!filtered.length) { el.innerHTML = '<div class="empty-state"><div class="icon">🔬</div><p>農薬散布記録がありません</p></div>'; return; }
+  let h = '<div class="table-wrap"><table><thead><tr><th>散布日</th><th>作物</th><th>農薬名</th><th>希釈倍数</th><th class="no-print">操作</th></tr></thead><tbody>';
+  filtered.forEach(r => { const crop = crops.find(c => c.id === r.cropId); h += `<tr><td>${formatDate(r.date)}</td><td>${crop?esc(crop.name)+'（'+esc(crop.fieldNo)+'）':'不明'}</td><td>${esc(r.name)}</td><td>${esc(r.dilution||'-')}</td><td class="no-print"><button class="btn btn-outline btn-sm" onclick="editPest('${r.id}')">編集</button> <button class="btn btn-danger btn-sm" onclick="deletePest('${r.id}')">削除</button></td></tr>`; });
+  h += '</tbody></table></div>'; el.innerHTML = h;
 }
 
-// ===== Dashboard =====
+// ============================================================
+//  Dashboard
+// ============================================================
 function renderDashboard() {
-  const crops = getCrops();
-  const growth = getGrowth();
-  const fert = getFert();
-  const pest = getPest();
+  const crops = getCrops(), growth = getGrowth(), fert = getFert(), pest = getPest();
   const students = [...new Set(crops.map(c => c.studentName))];
-
   document.getElementById('statsGrid').innerHTML = `
     <div class="stat-card"><div class="num">${crops.length}</div><div class="label">登録作物数</div></div>
     <div class="stat-card"><div class="num">${growth.length}</div><div class="label">生育記録数</div></div>
-    <div class="stat-card"><div class="num">${fert.length + pest.length}</div><div class="label">作業記録数</div></div>
-    <div class="stat-card"><div class="num">${students.length}</div><div class="label">担当生徒数</div></div>
-  `;
+    <div class="stat-card"><div class="num">${fert.length+pest.length}</div><div class="label">作業記録数</div></div>
+    <div class="stat-card"><div class="num">${students.length}</div><div class="label">担当生徒数</div></div>`;
 
-  // Recent records
-  const recent = growth.sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
-  const recentEl = document.getElementById('recentRecords');
-  if (recent.length === 0) {
-    recentEl.innerHTML = '<div class="empty-state"><p>まだ記録がありません</p></div>';
-  } else {
-    let html = '';
+  const recent = growth.slice().sort((a,b) => b.date.localeCompare(a.date)).slice(0,5);
+  const rEl = document.getElementById('recentRecords');
+  if (!recent.length) { rEl.innerHTML = '<div class="empty-state"><p>まだ記録がありません</p></div>'; }
+  else {
+    let h = '';
     recent.forEach(r => {
       const crop = crops.find(c => c.id === r.cropId);
-      const cName = crop ? `${crop.name}（${crop.fieldNo}）` : '不明';
-      let info = [];
-      if (r.stage) info.push(r.stage);
-      if (r.height) info.push(`草丈${r.height}cm`);
-      if (r.work) info.push(r.work);
-      html += `<div class="record-card" style="border-left-color:${crop ? ({ rice: '#2e7d32', wheat: '#e65100', vegetable: '#1565c0' }[crop.type] || 'var(--primary)') : 'var(--primary)'}">
-        <div class="date">${formatDate(r.date)} - ${esc(cName)}</div>
-        <div class="meta">${info.map(i => esc(i)).join(' ／ ')}</div>
-        ${r.memo ? `<div class="content">${esc(r.memo)}</div>` : ''}
-      </div>`;
+      const cn = crop ? `${crop.name}（${crop.fieldNo}）` : '不明';
+      let info = []; if (r.stage) info.push(r.stage); if (r.height) info.push(`草丈${r.height}cm`); if (r.work) info.push(r.work);
+      const col = crop ? ({rice:'#2e7d32',wheat:'#e65100',vegetable:'#1565c0'}[crop.type]||'var(--primary)') : 'var(--primary)';
+      h += `<div class="record-card" style="border-left-color:${col}"><div class="date">${formatDate(r.date)} - ${esc(cn)}</div><div class="meta">${info.map(i=>esc(i)).join(' ／ ')}</div>${r.memo?`<div class="content">${esc(r.memo)}</div>`:''}</div>`;
     });
-    recentEl.innerHTML = html;
+    rEl.innerHTML = h;
   }
 
-  // Upcoming harvest
   const today = new Date().toISOString().split('T')[0];
-  const upcoming = crops.filter(c => c.harvestDate && c.harvestDate >= today)
-    .sort((a, b) => a.harvestDate.localeCompare(b.harvestDate)).slice(0, 5);
-  const harvestEl = document.getElementById('upcomingHarvest');
-  if (upcoming.length === 0) {
-    harvestEl.innerHTML = '<div class="empty-state"><p>予定されている収穫はありません</p></div>';
-  } else {
-    let html = '<div class="table-wrap"><table><thead><tr><th>予定収穫日</th><th>作物</th><th>圃場</th><th>担当</th></tr></thead><tbody>';
-    upcoming.forEach(c => {
-      const daysLeft = Math.ceil((new Date(c.harvestDate) - new Date(today)) / 86400000);
-      html += `<tr>
-        <td>${formatDate(c.harvestDate)} <span style="color:${daysLeft <= 7 ? 'var(--danger)' : 'var(--text-secondary)'};font-size:0.8rem;">(あと${daysLeft}日)</span></td>
-        <td>${typeBadge(c.type)} ${esc(c.name)}</td>
-        <td>${esc(c.fieldNo)}</td>
-        <td>${esc(c.studentName)}</td>
-      </tr>`;
-    });
-    html += '</tbody></table></div>';
-    harvestEl.innerHTML = html;
+  const upcoming = crops.filter(c => c.harvestDate && c.harvestDate >= today).sort((a,b) => a.harvestDate.localeCompare(b.harvestDate)).slice(0,5);
+  const hEl = document.getElementById('upcomingHarvest');
+  if (!upcoming.length) { hEl.innerHTML = '<div class="empty-state"><p>予定されている収穫はありません</p></div>'; }
+  else {
+    let h = '<div class="table-wrap"><table><thead><tr><th>予定収穫日</th><th>作物</th><th>圃場</th><th>担当</th></tr></thead><tbody>';
+    upcoming.forEach(c => { const dl = Math.ceil((new Date(c.harvestDate)-new Date(today))/864e5); h += `<tr><td>${formatDate(c.harvestDate)} <span style="color:${dl<=7?'var(--danger)':'var(--text-secondary)'};font-size:.8rem">(あと${dl}日)</span></td><td>${typeBadge(c.type)} ${esc(c.name)}</td><td>${esc(c.fieldNo)}</td><td>${esc(c.studentName)}</td></tr>`; });
+    h += '</tbody></table></div>'; hEl.innerHTML = h;
   }
 }
 
-// ===== Charts =====
-let growthChartInstance = null;
-let typeChartInstance = null;
+// ============================================================
+//  Charts
+// ============================================================
+let growthChartInstance = null, typeChartInstance = null;
 
 function updateChart() {
   const cropId = document.getElementById('chartCrop').value;
   const chartType = document.getElementById('chartType').value;
   const canvas = document.getElementById('growthChart');
   const ctx = canvas.getContext('2d');
-
   if (growthChartInstance) { growthChartInstance.destroy(); growthChartInstance = null; }
-
-  if (!cropId) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    return;
-  }
-
-  const records = getGrowth().filter(r => r.cropId === cropId).sort((a, b) => a.date.localeCompare(b.date));
+  if (!cropId) { ctx.clearRect(0,0,canvas.width,canvas.height); return; }
+  const records = getGrowth().filter(r => r.cropId === cropId).sort((a,b) => a.date.localeCompare(b.date));
   const crop = getCrops().find(c => c.id === cropId);
   const labels = records.map(r => formatDate(r.date));
-
-  let dataKey, label, color;
-  switch (chartType) {
-    case 'height': dataKey = 'height'; label = '草丈 (cm)'; color = '#2e7d32'; break;
-    case 'stems': dataKey = 'stems'; label = '茎数 (本)'; color = '#1565c0'; break;
-    case 'tillers': dataKey = 'tillers'; label = '分げつ数'; color = '#e65100'; break;
-  }
-
-  const data = records.map(r => r[dataKey]);
-  if (data.every(v => v === null || v === undefined)) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.font = '14px sans-serif';
-    ctx.fillStyle = '#757575';
-    ctx.textAlign = 'center';
-    ctx.fillText('データがありません', canvas.width / 2, canvas.height / 2);
-    return;
-  }
-
-  growthChartInstance = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        label: `${crop ? crop.name : ''} - ${label}`,
-        data,
-        borderColor: color,
-        backgroundColor: color + '20',
-        fill: true,
-        tension: 0.3,
-        pointRadius: 5,
-        pointHoverRadius: 7,
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { position: 'top' } },
-      scales: {
-        y: { beginAtZero: true, title: { display: true, text: label } },
-        x: { title: { display: true, text: '日付' } }
-      }
-    }
-  });
+  let dk, lb, cl;
+  switch(chartType) { case 'height': dk='height';lb='草丈 (cm)';cl='#2e7d32';break; case 'stems': dk='stems';lb='茎数 (本)';cl='#1565c0';break; case 'tillers': dk='tillers';lb='分げつ数';cl='#e65100';break; }
+  const data = records.map(r => r[dk]);
+  if (data.every(v => v==null)) { ctx.clearRect(0,0,canvas.width,canvas.height); ctx.font='14px sans-serif'; ctx.fillStyle='#757575'; ctx.textAlign='center'; ctx.fillText('データがありません',canvas.width/2,canvas.height/2); return; }
+  growthChartInstance = new Chart(ctx, { type:'line', data:{ labels, datasets:[{ label:`${crop?crop.name:''} - ${lb}`, data, borderColor:cl, backgroundColor:cl+'20', fill:true, tension:.3, pointRadius:5, pointHoverRadius:7 }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top'}}, scales:{ y:{beginAtZero:true,title:{display:true,text:lb}}, x:{title:{display:true,text:'日付'}} } } });
 }
 
 function updateTypeChart() {
   const canvas = document.getElementById('typeChart');
   const ctx = canvas.getContext('2d');
   if (typeChartInstance) { typeChartInstance.destroy(); typeChartInstance = null; }
-
   const crops = getCrops();
-  const counts = { rice: 0, wheat: 0, vegetable: 0 };
-  crops.forEach(c => { if (counts[c.type] !== undefined) counts[c.type]++; });
-
-  typeChartInstance = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels: ['水稲', '麦', '野菜類'],
-      datasets: [{
-        data: [counts.rice, counts.wheat, counts.vegetable],
-        backgroundColor: ['#2e7d32', '#e65100', '#1565c0'],
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom' } }
-    }
-  });
+  const cnt = {rice:0,wheat:0,vegetable:0};
+  crops.forEach(c => { if (cnt[c.type]!==undefined) cnt[c.type]++; });
+  typeChartInstance = new Chart(ctx, { type:'doughnut', data:{ labels:['水稲','麦','野菜類'], datasets:[{ data:[cnt.rice,cnt.wheat,cnt.vegetable], backgroundColor:['#2e7d32','#e65100','#1565c0'] }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}} } });
 }
 
-// ===== Student View =====
+// ============================================================
+//  Student View
+// ============================================================
 function renderStudentView() {
-  const crops = getCrops();
-  const growth = getGrowth();
-  const filter = document.getElementById('studentFilter').value;
-  const students = filter ? [filter] : [...new Set(crops.map(c => c.studentName))].sort();
-
+  const crops = getCrops(), growth = getGrowth();
+  const f = document.getElementById('studentFilter').value;
+  const sts = f ? [f] : [...new Set(crops.map(c => c.studentName))].sort();
   const el = document.getElementById('studentView');
-  if (students.length === 0) {
-    el.innerHTML = '<div class="empty-state"><div class="icon">👩‍🌾</div><p>生徒データがありません</p></div>';
-    return;
-  }
-
-  let html = '';
-  students.forEach(s => {
-    const sCrops = crops.filter(c => c.studentName === s);
-    const sRecords = growth.filter(r => sCrops.some(c => c.id === r.cropId));
-    html += `<div class="card">
-      <div class="card-title">${esc(s)}（担当作物: ${sCrops.length}件 ／ 記録数: ${sRecords.length}件）</div>`;
-    if (sCrops.length === 0) {
-      html += '<p style="color:var(--text-secondary);">担当作物なし</p>';
-    } else {
-      html += '<div class="table-wrap"><table><thead><tr><th>タイプ</th><th>作物名</th><th>圃場</th><th>記録数</th><th>最終記録日</th></tr></thead><tbody>';
-      sCrops.forEach(c => {
-        const cRecords = sRecords.filter(r => r.cropId === c.id);
-        const lastDate = cRecords.sort((a, b) => b.date.localeCompare(a.date))[0];
-        html += `<tr>
-          <td>${typeBadge(c.type)}</td>
-          <td>${esc(c.name)}</td>
-          <td>${esc(c.fieldNo)}</td>
-          <td>${cRecords.length}</td>
-          <td>${lastDate ? formatDate(lastDate.date) : '-'}</td>
-        </tr>`;
-      });
-      html += '</tbody></table></div>';
+  if (!sts.length) { el.innerHTML = '<div class="empty-state"><div class="icon">👩‍🌾</div><p>生徒データがありません</p></div>'; return; }
+  let h = '';
+  sts.forEach(s => {
+    const sc = crops.filter(c => c.studentName === s);
+    const sr = growth.filter(r => sc.some(c => c.id === r.cropId));
+    h += `<div class="card"><div class="card-title">${esc(s)}（担当作物: ${sc.length}件 ／ 記録数: ${sr.length}件）</div>`;
+    if (!sc.length) h += '<p style="color:var(--text-secondary)">担当作物なし</p>';
+    else {
+      h += '<div class="table-wrap"><table><thead><tr><th>タイプ</th><th>作物名</th><th>圃場</th><th>記録数</th><th>最終記録日</th></tr></thead><tbody>';
+      sc.forEach(c => { const cr = sr.filter(r => r.cropId === c.id); const ld = cr.sort((a,b)=>b.date.localeCompare(a.date))[0]; h += `<tr><td>${typeBadge(c.type)}</td><td>${esc(c.name)}</td><td>${esc(c.fieldNo)}</td><td>${cr.length}</td><td>${ld?formatDate(ld.date):'-'}</td></tr>`; });
+      h += '</tbody></table></div>';
     }
-    html += '</div>';
+    h += '</div>';
   });
-  el.innerHTML = html;
+  el.innerHTML = h;
 }
 
-// ===== Print / Export =====
+// ============================================================
+//  Print / Export
+// ============================================================
 function generatePrintView() {
-  const targetId = document.getElementById('exportTarget').value;
+  const tid = document.getElementById('exportTarget').value;
   const content = document.getElementById('exportContent').value;
   const crops = getCrops();
-  const targetCrops = targetId === 'all' ? crops : crops.filter(c => c.id === targetId);
-
-  if (targetCrops.length === 0) {
-    document.getElementById('printPreview').innerHTML = '<div class="empty-state"><p>出力対象がありません</p></div>';
-    return;
-  }
-
-  let html = '';
-  targetCrops.forEach(crop => {
-    html += `<div class="card print-section">
-      <div class="card-title">${esc(crop.name)}（${esc(crop.variety || '-')}）- 圃場: ${esc(crop.fieldNo)} - 担当: ${esc(crop.studentName)}</div>`;
-
-    if (content === 'summary' || content === 'full') {
-      html += `<table style="margin-bottom:16px;">
-        <tr><th style="width:120px;">タイプ</th><td>${typeName(crop.type)}</td><th style="width:120px;">圃場</th><td>${esc(crop.fieldNo)}</td></tr>
-        <tr><th>播種日</th><td>${formatDate(crop.sowDate)}</td><th>定植日</th><td>${formatDate(crop.plantDate)}</td></tr>
-        <tr><th>予定収穫日</th><td>${formatDate(crop.harvestDate)}</td>`;
-      if (crop.type === 'rice') html += `<th>出穂日</th><td>${formatDate(crop.headingDate)}</td>`;
-      else if (crop.type === 'wheat') html += `<th>穂揃い期</th><td>${formatDate(crop.earDate)}</td>`;
-      else html += '<th></th><td></td>';
-      html += '</tr></table>';
+  const tc = tid === 'all' ? crops : crops.filter(c => c.id === tid);
+  if (!tc.length) { document.getElementById('printPreview').innerHTML = '<div class="empty-state"><p>出力対象がありません</p></div>'; return; }
+  let h = '';
+  tc.forEach(crop => {
+    h += `<div class="card print-section"><div class="card-title">${esc(crop.name)}（${esc(crop.variety||'-')}）- 圃場: ${esc(crop.fieldNo)} - 担当: ${esc(crop.studentName)}</div>`;
+    if (content==='summary'||content==='full') {
+      h += `<table style="margin-bottom:16px"><tr><th style="width:120px">タイプ</th><td>${typeName(crop.type)}</td><th style="width:120px">圃場</th><td>${esc(crop.fieldNo)}</td></tr><tr><th>播種日</th><td>${formatDate(crop.sowDate)}</td><th>定植日</th><td>${formatDate(crop.plantDate)}</td></tr><tr><th>予定収穫日</th><td>${formatDate(crop.harvestDate)}</td>`;
+      if (crop.type==='rice') h+=`<th>出穂日</th><td>${formatDate(crop.headingDate)}</td>`;
+      else if (crop.type==='wheat') h+=`<th>穂揃い期</th><td>${formatDate(crop.earDate)}</td>`;
+      else h+='<th></th><td></td>';
+      h+='</tr></table>';
     }
-
-    if (content === 'summary' || content === 'growth' || content === 'full') {
-      const records = getGrowth().filter(r => r.cropId === crop.id).sort((a, b) => a.date.localeCompare(b.date));
-      if (records.length > 0) {
-        html += '<h4 style="margin:12px 0 8px;">生育記録</h4>';
-        html += '<table><thead><tr><th>日付</th><th>ステージ</th><th>草丈</th><th>茎数</th>';
-        if (crop.type === 'rice') html += '<th>分げつ数</th><th>倒伏</th>';
-        if (crop.type === 'wheat') html += '<th>赤かび病</th>';
-        html += '<th>作業</th><th>メモ</th></tr></thead><tbody>';
-        records.forEach(r => {
-          html += `<tr><td>${formatDate(r.date)}</td><td>${esc(r.stage || '-')}</td>
-            <td>${r.height ? r.height + 'cm' : '-'}</td><td>${r.stems || '-'}</td>`;
-          if (crop.type === 'rice') html += `<td>${r.tillers || '-'}</td><td>${esc(r.lodging || '-')}</td>`;
-          if (crop.type === 'wheat') html += `<td>${esc(r.fusarium || '-')}</td>`;
-          html += `<td>${esc(r.work || '-')}</td><td>${esc(r.memo || '-')}</td></tr>`;
-        });
-        html += '</tbody></table>';
+    if (content==='summary'||content==='growth'||content==='full') {
+      const recs = getGrowth().filter(r=>r.cropId===crop.id).sort((a,b)=>a.date.localeCompare(b.date));
+      if (recs.length) {
+        h+='<h4 style="margin:12px 0 8px">生育記録</h4><table><thead><tr><th>日付</th><th>ステージ</th><th>草丈</th><th>茎数</th>';
+        if (crop.type==='rice') h+='<th>分げつ数</th><th>倒伏</th>';
+        if (crop.type==='wheat') h+='<th>赤かび病</th>';
+        h+='<th>作業</th><th>メモ</th></tr></thead><tbody>';
+        recs.forEach(r => { h+=`<tr><td>${formatDate(r.date)}</td><td>${esc(r.stage||'-')}</td><td>${r.height?r.height+'cm':'-'}</td><td>${r.stems||'-'}</td>`; if(crop.type==='rice')h+=`<td>${r.tillers||'-'}</td><td>${esc(r.lodging||'-')}</td>`; if(crop.type==='wheat')h+=`<td>${esc(r.fusarium||'-')}</td>`; h+=`<td>${esc(r.work||'-')}</td><td>${esc(r.memo||'-')}</td></tr>`; });
+        h+='</tbody></table>';
       }
     }
-
-    if (content === 'fert' || content === 'full') {
-      const ferts = getFert().filter(f => f.cropId === crop.id).sort((a, b) => a.date.localeCompare(b.date));
-      if (ferts.length > 0) {
-        html += '<h4 style="margin:12px 0 8px;">施肥履歴</h4>';
-        html += '<table><thead><tr><th>施用日</th><th>肥料名</th><th>施用量</th></tr></thead><tbody>';
-        ferts.forEach(f => {
-          html += `<tr><td>${formatDate(f.date)}</td><td>${esc(f.name)}</td><td>${esc(f.amount)}</td></tr>`;
-        });
-        html += '</tbody></table>';
-      }
+    if (content==='fert'||content==='full') {
+      const fs = getFert().filter(f=>f.cropId===crop.id).sort((a,b)=>a.date.localeCompare(b.date));
+      if (fs.length) { h+='<h4 style="margin:12px 0 8px">施肥履歴</h4><table><thead><tr><th>施用日</th><th>肥料名</th><th>施用量</th></tr></thead><tbody>'; fs.forEach(f=>{h+=`<tr><td>${formatDate(f.date)}</td><td>${esc(f.name)}</td><td>${esc(f.amount)}</td></tr>`;}); h+='</tbody></table>'; }
     }
-
-    if (content === 'pest' || content === 'full') {
-      const pests = getPest().filter(p => p.cropId === crop.id).sort((a, b) => a.date.localeCompare(b.date));
-      if (pests.length > 0) {
-        html += '<h4 style="margin:12px 0 8px;">農薬散布履歴</h4>';
-        html += '<table><thead><tr><th>散布日</th><th>農薬名</th><th>希釈倍数</th></tr></thead><tbody>';
-        pests.forEach(p => {
-          html += `<tr><td>${formatDate(p.date)}</td><td>${esc(p.name)}</td><td>${esc(p.dilution || '-')}</td></tr>`;
-        });
-        html += '</tbody></table>';
-      }
+    if (content==='pest'||content==='full') {
+      const ps = getPest().filter(p=>p.cropId===crop.id).sort((a,b)=>a.date.localeCompare(b.date));
+      if (ps.length) { h+='<h4 style="margin:12px 0 8px">農薬散布履歴</h4><table><thead><tr><th>散布日</th><th>農薬名</th><th>希釈倍数</th></tr></thead><tbody>'; ps.forEach(p=>{h+=`<tr><td>${formatDate(p.date)}</td><td>${esc(p.name)}</td><td>${esc(p.dilution||'-')}</td></tr>`;}); h+='</tbody></table>'; }
     }
-
-    html += '</div>';
+    h+='</div>';
   });
-
-  document.getElementById('printPreview').innerHTML = html;
+  document.getElementById('printPreview').innerHTML = h;
   showToast('プレビューを生成しました');
 }
 
 function exportCSV() {
-  const targetId = document.getElementById('exportTarget').value;
+  const tid = document.getElementById('exportTarget').value;
   const crops = getCrops();
-  const targetCrops = targetId === 'all' ? crops : crops.filter(c => c.id === targetId);
-
-  if (targetCrops.length === 0) {
-    showToast('出力対象がありません');
-    return;
-  }
-
-  const BOM = '\uFEFF';
-  let csv = BOM + '作物名,品種,タイプ,圃場,担当,日付,ステージ,草丈(cm),茎数,分げつ数,倒伏,赤かび病,作業,メモ\n';
-
-  targetCrops.forEach(crop => {
-    const records = getGrowth().filter(r => r.cropId === crop.id).sort((a, b) => a.date.localeCompare(b.date));
-    if (records.length === 0) {
-      csv += `"${crop.name}","${crop.variety || ''}","${typeName(crop.type)}","${crop.fieldNo}","${crop.studentName}","","","","","","","","",""\n`;
-    } else {
-      records.forEach(r => {
-        csv += `"${crop.name}","${crop.variety || ''}","${typeName(crop.type)}","${crop.fieldNo}","${crop.studentName}","${r.date}","${r.stage || ''}","${r.height || ''}","${r.stems || ''}","${r.tillers || ''}","${r.lodging || ''}","${r.fusarium || ''}","${r.work || ''}","${(r.memo || '').replace(/"/g, '""')}"\n`;
-      });
-    }
+  const tc = tid==='all' ? crops : crops.filter(c=>c.id===tid);
+  if (!tc.length) { showToast('出力対象がありません'); return; }
+  let csv = '\uFEFF作物名,品種,タイプ,圃場,担当,日付,ステージ,草丈(cm),茎数,分げつ数,倒伏,赤かび病,作業,メモ\n';
+  tc.forEach(crop => {
+    const recs = getGrowth().filter(r=>r.cropId===crop.id).sort((a,b)=>a.date.localeCompare(b.date));
+    if (!recs.length) csv+=`"${crop.name}","${crop.variety||''}","${typeName(crop.type)}","${crop.fieldNo}","${crop.studentName}","","","","","","","","",""\n`;
+    else recs.forEach(r=>{csv+=`"${crop.name}","${crop.variety||''}","${typeName(crop.type)}","${crop.fieldNo}","${crop.studentName}","${r.date}","${r.stage||''}","${r.height||''}","${r.stems||''}","${r.tillers||''}","${r.lodging||''}","${r.fusarium||''}","${r.work||''}","${(r.memo||'').replace(/"/g,'""')}"\n`;});
   });
-
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `生育記録_${new Date().toISOString().split('T')[0]}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  const a = document.createElement('a'); a.href=url; a.download=`生育記録_${new Date().toISOString().split('T')[0]}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
   showToast('CSVファイルをダウンロードしました');
 }
 
-// ===== XSS Prevention =====
-function esc(str) {
-  if (!str) return '';
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
-
-// ===== Init =====
-function init() {
-  document.getElementById('growthDate').valueAsDate = new Date();
-  document.getElementById('fertDate').valueAsDate = new Date();
-  document.getElementById('pestDate').valueAsDate = new Date();
+// ============================================================
+//  Render All & Init
+// ============================================================
+function renderAll() {
   populateCropSelects();
   renderDashboard();
   renderCropList();
@@ -1555,7 +1049,12 @@ function init() {
   renderPestList();
 }
 
-init();
+function initApp() {
+  document.getElementById('growthDate').valueAsDate = new Date();
+  document.getElementById('fertDate').valueAsDate = new Date();
+  document.getElementById('pestDate').valueAsDate = new Date();
+  renderAll();
+}
 </script>
 </body>
 </html>
