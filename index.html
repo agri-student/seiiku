@@ -8,6 +8,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
 <style>
 :root{--primary:#2e7d32;--primary-light:#60ad5e;--primary-dark:#005005;--accent:#ff8f00;--bg:#f5f5f5;--card:#fff;--text:#212121;--text-secondary:#757575;--border:#e0e0e0;--danger:#c62828;--success:#2e7d32;--success-light:#e8f5e9;--info:#1565c0;--info-light:#e3f2fd;--shadow:0 2px 8px rgba(0,0,0,.1);--radius:8px}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -346,17 +347,21 @@ tr:hover{background:#f9f9f9}
 <script>
 // ============================================================
 //  Firebase Configuration
-//  ★★★ 以下をあなたのFirebaseプロジェクトの値に書き換えてください ★★★
+//  firebase-config.js から読み込まれます。
+//  firebase-config.js が存在しない場合はローカルストレージモードで動作します。
+//  セットアップ方法: firebase-config.example.js を firebase-config.js にコピーして
+//  あなたのFirebaseプロジェクトの値を設定してください。
 // ============================================================
-const firebaseConfig = {
-  apiKey: "AIzaSyDPkvTwLuSBGgdX3ED42RWzaelmqClo2Kw",
-  authDomain: "seiiku2.firebaseapp.com",
-  projectId: "seiiku2",
-  storageBucket: "seiiku2.firebasestorage.app",
-  messagingSenderId: "382357095429",
-  appId: "1:382357095429:web:6a8db8deb7a8febecbc86c",
-  measurementId: "G-KVFV3MH3T3"
-};
+if (typeof firebaseConfig === 'undefined') {
+  var firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "000000000000",
+    appId: "YOUR_APP_ID"
+  };
+}
 
 // ============================================================
 //  Firebase / Fallback Initialization
