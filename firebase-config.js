@@ -1,7 +1,7 @@
 // ============================================================
 //  Firebase Configuration
 // ============================================================
-const firebaseConfig = {
+var firebaseConfig = {
   apiKey: "AIzaSyCWyiwST1lF6UUcnT8L91NUg36C41z1cLE",
   authDomain: "seiiku2.firebaseapp.com",
   projectId: "seiiku2",
