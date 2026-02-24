@@ -687,10 +687,13 @@ document.getElementById('cropForm').addEventListener('submit', async function(e)
   if (editId) { const idx = crops.findIndex(c => c.id === editId); if (idx >= 0) crops[idx] = data; }
   else crops.push(data);
   await saveCrops(crops);
-  if (useFirebase) await fsUpdate('crops', data.id, data);
   resetCropForm();
   renderAll();
   showToast(editId ? '作物情報を更新しました' : '作物を登録しました');
+  if (useFirebase) {
+    try { await fsUpdate('crops', data.id, data); }
+    catch (err) { console.error('Firestore write error:', err); showToast('サーバー保存に失敗しました'); }
+  }
 });
 function resetCropForm() {
   document.getElementById('cropForm').reset();
@@ -724,14 +727,16 @@ function deleteCrop(id) {
     await saveGrowth(getGrowth().filter(g => g.cropId !== id));
     await saveFert(getFert().filter(f => f.cropId !== id));
     await savePest(getPest().filter(p => p.cropId !== id));
-    if (useFirebase) {
-      await fsDelete('crops', id);
-      for (const g of gDel) await fsDelete('growth', g.id);
-      for (const f of fDel) await fsDelete('fertilizers', f.id);
-      for (const p of pDel) await fsDelete('pesticides', p.id);
-    }
     renderAll();
     showToast('作物を削除しました');
+    if (useFirebase) {
+      try {
+        await fsDelete('crops', id);
+        for (const g of gDel) await fsDelete('growth', g.id);
+        for (const f of fDel) await fsDelete('fertilizers', f.id);
+        for (const p of pDel) await fsDelete('pesticides', p.id);
+      } catch (err) { console.error('Firestore delete error:', err); showToast('サーバー削除に失敗しました'); }
+    }
   });
 }
 function renderCropList() {
@@ -774,9 +779,12 @@ document.getElementById('growthForm').addEventListener('submit', async function(
   if (editId) { const i = records.findIndex(r => r.id === editId); if (i >= 0) records[i] = data; }
   else records.push(data);
   await saveGrowth(records);
-  if (useFirebase) await fsUpdate('growth', data.id, data);
   resetGrowthForm(); renderGrowthList();
   showToast(editId ? '記録を更新しました' : '生育記録を保存しました');
+  if (useFirebase) {
+    try { await fsUpdate('growth', data.id, data); }
+    catch (err) { console.error('Firestore write error:', err); showToast('サーバー保存に失敗しました'); }
+  }
 });
 function resetGrowthForm() {
   document.getElementById('growthForm').reset();
@@ -804,8 +812,11 @@ function editGrowth(id) {
 function deleteGrowth(id) {
   showConfirm('この記録を削除しますか？', async () => {
     await saveGrowth(getGrowth().filter(r => r.id !== id));
-    if (useFirebase) await fsDelete('growth', id);
     renderGrowthList(); showToast('記録を削除しました');
+    if (useFirebase) {
+      try { await fsDelete('growth', id); }
+      catch (err) { console.error('Firestore delete error:', err); showToast('サーバー削除に失敗しました'); }
+    }
   });
 }
 function renderGrowthList() {
@@ -838,9 +849,12 @@ document.getElementById('fertForm').addEventListener('submit', async function(e)
   const data = { id: editId || genId(), cropId: document.getElementById('fertCrop').value, date: document.getElementById('fertDate').value, name: document.getElementById('fertName').value.trim(), amount: document.getElementById('fertAmount').value.trim() };
   if (editId) { const i = records.findIndex(r => r.id === editId); if (i >= 0) records[i] = data; } else records.push(data);
   await saveFert(records);
-  if (useFirebase) await fsUpdate('fertilizers', data.id, data);
   resetFertForm(); renderFertList();
   showToast(editId ? '施肥記録を更新しました' : '施肥記録を登録しました');
+  if (useFirebase) {
+    try { await fsUpdate('fertilizers', data.id, data); }
+    catch (err) { console.error('Firestore write error:', err); showToast('サーバー保存に失敗しました'); }
+  }
 });
 function resetFertForm() { document.getElementById('fertForm').reset(); document.getElementById('fertEditId').value = ''; }
 function editFert(id) {
@@ -852,8 +866,11 @@ function editFert(id) {
 function deleteFert(id) {
   showConfirm('この施肥記録を削除しますか？', async () => {
     await saveFert(getFert().filter(r => r.id !== id));
-    if (useFirebase) await fsDelete('fertilizers', id);
     renderFertList(); showToast('施肥記録を削除しました');
+    if (useFirebase) {
+      try { await fsDelete('fertilizers', id); }
+      catch (err) { console.error('Firestore delete error:', err); showToast('サーバー削除に失敗しました'); }
+    }
   });
 }
 function renderFertList() {
@@ -877,9 +894,12 @@ document.getElementById('pestForm').addEventListener('submit', async function(e)
   const data = { id: editId || genId(), cropId: document.getElementById('pestCrop').value, date: document.getElementById('pestDate').value, name: document.getElementById('pestName').value.trim(), dilution: document.getElementById('pestDilution').value.trim() };
   if (editId) { const i = records.findIndex(r => r.id === editId); if (i >= 0) records[i] = data; } else records.push(data);
   await savePest(records);
-  if (useFirebase) await fsUpdate('pesticides', data.id, data);
   resetPestForm(); renderPestList();
   showToast(editId ? '農薬記録を更新しました' : '農薬散布記録を登録しました');
+  if (useFirebase) {
+    try { await fsUpdate('pesticides', data.id, data); }
+    catch (err) { console.error('Firestore write error:', err); showToast('サーバー保存に失敗しました'); }
+  }
 });
 function resetPestForm() { document.getElementById('pestForm').reset(); document.getElementById('pestEditId').value = ''; }
 function editPest(id) {
@@ -892,8 +912,11 @@ function editPest(id) {
 function deletePest(id) {
   showConfirm('この農薬散布記録を削除しますか？', async () => {
     await savePest(getPest().filter(r => r.id !== id));
-    if (useFirebase) await fsDelete('pesticides', id);
     renderPestList(); showToast('農薬散布記録を削除しました');
+    if (useFirebase) {
+      try { await fsDelete('pesticides', id); }
+      catch (err) { console.error('Firestore delete error:', err); showToast('サーバー削除に失敗しました'); }
+    }
   });
 }
 function renderPestList() {
