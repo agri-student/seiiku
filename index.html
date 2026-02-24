@@ -559,7 +559,7 @@ function authErrorMsg(code) {
 
 async function enterApp(displayName) {
   document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('appScreen').style.display = '';
+  document.getElementById('appScreen').style.display = 'block';
   document.getElementById('displayUserName').textContent = displayName;
   if (!useFirebase) document.getElementById('setupBanner').style.display = '';
   await loadAllData();
