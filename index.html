@@ -612,7 +612,7 @@ function showConfirm(msg, cb) {
   document.getElementById('confirmMsg').textContent = msg;
   document.getElementById('confirmModal').classList.add('show');
   confirmCallback = cb;
-  document.getElementById('confirmYes').onclick = () => { closeConfirm(); if (confirmCallback) confirmCallback(); };
+  document.getElementById('confirmYes').onclick = () => { const fn = confirmCallback; closeConfirm(); if (fn) fn(); };
 }
 function closeConfirm() { document.getElementById('confirmModal').classList.remove('show'); confirmCallback = null; }
 
