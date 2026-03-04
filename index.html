@@ -51,7 +51,7 @@ th{background:var(--success-light);font-weight:700;color:var(--primary-dark);pos
 tr:hover{background:#f9f9f9}
 .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--radius);border:1px solid var(--border)}
 .badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:.75rem;font-weight:600}
-.badge-rice{background:#e8f5e9;color:#2e7d32}.badge-wheat{background:#fff3e0;color:#e65100}.badge-veg{background:#e3f2fd;color:#1565c0}
+.badge-rice{background:#e8f5e9;color:#2e7d32}.badge-wheat{background:#fff3e0;color:#e65100}.badge-veg{background:#e3f2fd;color:#1565c0}.badge-fruit{background:#fce4ec;color:#c62828}.badge-flower{background:#f3e5f5;color:#7b1fa2}.badge-bean{background:#efebe9;color:#4e342e}
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px}
 .stat-card{background:var(--card);border-radius:var(--radius);padding:16px;text-align:center;box-shadow:var(--shadow);border-left:4px solid var(--primary)}
 .stat-card .num{font-size:2rem;font-weight:800;color:var(--primary)}
@@ -62,6 +62,28 @@ tr:hover{background:#f9f9f9}
 .filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
 .filter-bar select,.filter-bar input{padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:.85rem;font-family:inherit}
 .chart-container{position:relative;height:300px;max-height:400px}
+/* Calendar */
+.calendar-nav{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.calendar-nav button{background:var(--primary);color:#fff;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:.85rem}
+.calendar-nav button:hover{background:var(--primary-dark)}
+.calendar-nav .month-label{font-size:1rem;font-weight:700;min-width:140px;text-align:center}
+.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.calendar-grid .day-header{text-align:center;font-size:.75rem;font-weight:700;color:var(--text-secondary);padding:6px 0}
+.calendar-grid .day-cell{min-height:70px;background:var(--card);border:1px solid var(--border);border-radius:4px;padding:4px;font-size:.75rem;position:relative;overflow:hidden}
+.calendar-grid .day-cell.other-month{background:#fafafa;color:#bbb}
+.calendar-grid .day-cell.today{border-color:var(--primary);border-width:2px}
+.calendar-grid .day-cell .day-num{font-weight:700;font-size:.8rem;margin-bottom:2px}
+.calendar-grid .day-cell .cal-event{background:var(--success-light);color:var(--primary-dark);border-radius:3px;padding:1px 4px;margin-bottom:1px;font-size:.65rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.calendar-grid .day-cell .cal-event.type-fert{background:var(--info-light);color:var(--info)}
+.calendar-grid .day-cell .cal-event.type-pest{background:#fff3e0;color:#e65100}
+/* Bulk select */
+.bulk-bar{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--info-light);border-radius:var(--radius);margin-bottom:12px}
+.bulk-bar .bulk-count{font-weight:700;color:var(--info)}
+.bulk-check{width:18px;height:18px;cursor:pointer;accent-color:var(--primary)}
+/* Role badge */
+.role-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.7rem;font-weight:600}
+.role-teacher{background:#e8eaf6;color:#283593}
+.role-student{background:#e8f5e9;color:#2e7d32}
 .grain-fields{display:none}.grain-fields.show{display:contents}
 .print-section{margin-bottom:24px}
 .record-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:12px;border-left:4px solid var(--primary)}
@@ -112,6 +134,8 @@ tr:hover{background:#f9f9f9}
   .btn{padding:8px 14px;font-size:.82rem}
   .modal{margin-top:10px}
   .chart-container{height:250px}
+  .calendar-grid .day-cell{min-height:50px}
+  .calendar-grid .day-cell .cal-event{font-size:.6rem}
   .login-card{padding:28px 20px}
 }
 @media print{
@@ -153,6 +177,10 @@ tr:hover{background:#f9f9f9}
         <input type="text" id="regName" placeholder="例: 山田太郎">
       </div>
       <div class="form-group">
+        <label>ロール（役割）</label>
+        <select id="regRole"><option value="student">生徒</option><option value="teacher">教員</option></select>
+      </div>
+      <div class="form-group">
         <label>メールアドレス</label>
         <input type="email" id="regEmail" placeholder="example@school.ac.jp">
       </div>
@@ -175,6 +203,7 @@ tr:hover{background:#f9f9f9}
   <h1><span>🌾</span> 作物生育管理</h1>
   <div class="header-right">
     <span class="user-name" id="displayUserName"></span>
+    <span id="displayUserRole"></span>
     <button onclick="doLogout()">ログアウト</button>
   </div>
 </header>
@@ -185,8 +214,9 @@ tr:hover{background:#f9f9f9}
     <button class="tab-btn" data-tab="crops">作物管理</button>
     <button class="tab-btn" data-tab="growth">生育記録</button>
     <button class="tab-btn" data-tab="work">作業管理</button>
+    <button class="tab-btn" data-tab="calendar">カレンダー</button>
     <button class="tab-btn" data-tab="charts">グラフ</button>
-    <button class="tab-btn" data-tab="students">生徒管理</button>
+    <button class="tab-btn teacher-only" data-tab="students">生徒管理</button>
     <button class="tab-btn" data-tab="export">印刷・出力</button>
   </div>
 </nav>
@@ -211,11 +241,11 @@ tr:hover{background:#f9f9f9}
       <div class="card-title">作物登録</div>
       <form id="cropForm">
         <div class="form-grid">
-          <div class="form-group"><label>作物タイプ *</label><select id="cropType" required><option value="">選択してください</option><option value="rice">水稲</option><option value="wheat">麦</option><option value="vegetable">野菜類</option></select></div>
+          <div class="form-group"><label>作物タイプ *</label><select id="cropType" required><option value="">選択してください</option><option value="rice">水稲</option><option value="wheat">麦</option><option value="vegetable">野菜類</option><option value="fruit">果樹</option><option value="flower">花き</option><option value="bean">豆類</option></select></div>
           <div class="form-group"><label>作物名 *</label><input type="text" id="cropName" placeholder="例: 水稲、トマト、小麦" required></div>
           <div class="form-group"><label>品種</label><input type="text" id="cropVariety" placeholder="例: コシヒカリ、千果、さとのそら"></div>
           <div class="form-group"><label>圃場番号 *</label><input type="text" id="cropField" placeholder="例: A-1" required></div>
-          <div class="form-group"><label>担当生徒名 *</label><input type="text" id="cropStudent" placeholder="例: 山田太郎" required></div>
+          <div class="form-group"><label>担当生徒名 *</label><input type="text" id="cropStudent" placeholder="例: 山田太郎" required list="studentNameList"><datalist id="studentNameList"></datalist></div>
           <div class="form-group"><label>播種日</label><input type="date" id="cropSowDate"></div>
           <div class="form-group"><label>定植日</label><input type="date" id="cropPlantDate"></div>
           <div class="form-group"><label>予定収穫日</label><input type="date" id="cropHarvestDate"></div>
@@ -229,7 +259,7 @@ tr:hover{background:#f9f9f9}
     <div class="card">
       <div class="card-title">登録作物一覧</div>
       <div class="filter-bar no-print">
-        <select id="cropFilterType" onchange="renderCropList()"><option value="">全タイプ</option><option value="rice">水稲</option><option value="wheat">麦</option><option value="vegetable">野菜類</option></select>
+        <select id="cropFilterType" onchange="renderCropList()"><option value="">全タイプ</option><option value="rice">水稲</option><option value="wheat">麦</option><option value="vegetable">野菜類</option><option value="fruit">果樹</option><option value="flower">花き</option><option value="bean">豆類</option></select>
         <input type="text" id="cropFilterText" placeholder="検索..." oninput="renderCropList()">
       </div>
       <div id="cropList"></div>
@@ -264,6 +294,11 @@ tr:hover{background:#f9f9f9}
         <select id="growthFilterCrop" onchange="renderGrowthList()"><option value="">全作物</option></select>
         <input type="date" id="growthFilterFrom" onchange="renderGrowthList()" title="開始日">
         <input type="date" id="growthFilterTo" onchange="renderGrowthList()" title="終了日">
+      </div>
+      <div id="growthBulkBar" class="bulk-bar no-print" style="display:none">
+        <input type="checkbox" class="bulk-check" id="growthSelectAll" onchange="toggleGrowthSelectAll(this.checked)">
+        <span class="bulk-count" id="growthBulkCount">0件選択中</span>
+        <button class="btn btn-danger btn-sm teacher-only" onclick="bulkDeleteGrowth()">選択した記録を削除</button>
       </div>
       <div id="growthList"></div>
     </div>
@@ -301,12 +336,27 @@ tr:hover{background:#f9f9f9}
     <div class="card"><div class="card-title">農薬散布履歴</div><div class="filter-bar no-print"><select id="pestFilterCrop" onchange="renderPestList()"><option value="">全作物</option></select></div><div id="pestList"></div></div>
   </div>
 
+  <!-- カレンダー -->
+  <div id="calendar" class="tab-content">
+    <div class="card">
+      <div class="card-title">カレンダー表示</div>
+      <div class="calendar-nav no-print">
+        <button onclick="calendarPrev()">&lt; 前月</button>
+        <span class="month-label" id="calendarMonthLabel"></span>
+        <button onclick="calendarNext()">翌月 &gt;</button>
+        <button onclick="calendarToday()" style="margin-left:auto">今月</button>
+      </div>
+      <div class="calendar-grid" id="calendarGrid"></div>
+    </div>
+  </div>
+
   <!-- グラフ -->
   <div id="charts" class="tab-content">
     <div class="card">
       <div class="card-title">生育データグラフ</div>
       <div class="filter-bar no-print">
         <select id="chartCrop" onchange="updateChart()"><option value="">作物を選択</option></select>
+        <select id="chartCrop2" onchange="updateChart()"><option value="">比較作物（任意）</option></select>
         <select id="chartType" onchange="updateChart()"><option value="height">草丈の推移</option><option value="stems">茎数の推移</option><option value="leaves">葉数の推移</option><option value="temp">気温の推移</option><option value="tillers">分げつ数の推移</option></select>
       </div>
       <div class="chart-container"><canvas id="growthChart"></canvas></div>
@@ -338,6 +388,17 @@ tr:hover{background:#f9f9f9}
       </div>
     </div>
     <div id="printPreview"></div>
+    <div class="card">
+      <div class="card-title">CSVインポート</div>
+      <p style="font-size:.85rem;color:var(--text-secondary);margin-bottom:12px">エクスポートしたCSVファイルを読み込んで生育記録を一括登録します。ヘッダー行は自動でスキップされます。</p>
+      <div class="form-grid">
+        <div class="form-group"><label>CSVファイル</label><input type="file" id="csvFileInput" accept=".csv"></div>
+      </div>
+      <div class="btn-group no-print">
+        <button class="btn btn-primary" onclick="importCSV()">インポート実行</button>
+      </div>
+      <div id="csvImportResult" style="margin-top:12px;font-size:.85rem"></div>
+    </div>
   </div>
 </main>
 </div>
@@ -518,8 +579,10 @@ async function doRegister() {
   if (pass.length < 6) { errEl.textContent = 'パスワードは6文字以上で入力してください'; return; }
   try {
     document.getElementById('regBtn').disabled = true;
+    const role = document.getElementById('regRole').value;
     const cred = await auth.createUserWithEmailAndPassword(email, pass);
     await cred.user.updateProfile({ displayName: name });
+    await saveUserRole(cred.user.uid, role);
   } catch (e) {
     errEl.textContent = authErrorMsg(e.code);
     document.getElementById('regBtn').disabled = false;
@@ -564,6 +627,7 @@ async function enterApp(displayName) {
   document.getElementById('appScreen').style.display = 'block';
   document.getElementById('displayUserName').textContent = displayName;
   if (!useFirebase) document.getElementById('setupBanner').style.display = '';
+  await loadUserRole();
   await loadAllData();
   initApp();
 }
@@ -599,9 +663,9 @@ function formatDate(d) {
   const p = d.split('-');
   return p.length === 3 ? `${p[0]}/${p[1]}/${p[2]}` : d;
 }
-function typeName(t) { return { rice: '水稲', wheat: '麦', vegetable: '野菜類' }[t] || t; }
+function typeName(t) { return { rice: '水稲', wheat: '麦', vegetable: '野菜類', fruit: '果樹', flower: '花き', bean: '豆類' }[t] || t; }
 function typeBadge(t) {
-  const cls = { rice: 'badge-rice', wheat: 'badge-wheat', vegetable: 'badge-veg' }[t] || '';
+  const cls = { rice: 'badge-rice', wheat: 'badge-wheat', vegetable: 'badge-veg', fruit: 'badge-fruit', flower: 'badge-flower', bean: 'badge-bean' }[t] || '';
   return `<span class="badge ${cls}">${typeName(t)}</span>`;
 }
 function cropLabel(c) { return `${c.name}（${c.variety || '-'}）[${c.fieldNo}] - ${c.studentName}`; }
@@ -626,6 +690,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.classList.add('active');
     document.getElementById(btn.dataset.tab).classList.add('active');
     if (btn.dataset.tab === 'dashboard') renderDashboard();
+    if (btn.dataset.tab === 'calendar') renderCalendar();
     if (btn.dataset.tab === 'charts') { updateChart(); updateTypeChart(); }
     if (btn.dataset.tab === 'students') renderStudentView();
   });
@@ -647,7 +712,7 @@ document.getElementById('growthCrop').addEventListener('change', function() {
 // ============================================================
 function populateCropSelects() {
   const crops = getCrops();
-  ['growthCrop','fertCrop','pestCrop','growthFilterCrop','fertFilterCrop','pestFilterCrop','chartCrop','exportTarget'].forEach(id => {
+  ['growthCrop','fertCrop','pestCrop','growthFilterCrop','fertFilterCrop','pestFilterCrop','chartCrop','chartCrop2','exportTarget'].forEach(id => {
     const sel = document.getElementById(id);
     if (!sel) return;
     const val = sel.value;
@@ -658,6 +723,12 @@ function populateCropSelects() {
     crops.forEach(c => { const o = document.createElement('option'); o.value = c.id; o.textContent = cropLabel(c); sel.appendChild(o); });
     if (val) sel.value = val;
   });
+  // Update student name datalist
+  const dl = document.getElementById('studentNameList');
+  if (dl) {
+    const names = [...new Set(crops.map(c => c.studentName).filter(Boolean))].sort();
+    dl.innerHTML = names.map(n => `<option value="${esc(n)}">`).join('');
+  }
   const sf = document.getElementById('studentFilter');
   if (sf) {
     const sts = [...new Set(crops.map(c => c.studentName))].sort();
@@ -753,7 +824,7 @@ function renderCropList() {
   const el = document.getElementById('cropList');
   if (!filtered.length) { el.innerHTML = '<div class="empty-state"><div class="icon">🌱</div><p>登録された作物がありません</p></div>'; return; }
   let h = '<div class="table-wrap"><table><thead><tr><th>タイプ</th><th>作物名</th><th>品種</th><th>圃場</th><th>担当</th><th>播種日</th><th>予定収穫日</th><th class="no-print">操作</th></tr></thead><tbody>';
-  filtered.forEach(c => { h += `<tr><td>${typeBadge(c.type)}</td><td>${esc(c.name)}</td><td>${esc(c.variety||'-')}</td><td>${esc(c.fieldNo)}</td><td>${esc(c.studentName)}</td><td>${formatDate(c.sowDate)}</td><td>${formatDate(c.harvestDate)}</td><td class="no-print"><button class="btn btn-outline btn-sm" onclick="editCrop('${c.id}')">編集</button> <button class="btn btn-danger btn-sm" onclick="deleteCrop('${c.id}')">削除</button></td></tr>`; });
+  filtered.forEach(c => { h += `<tr><td>${typeBadge(c.type)}</td><td>${esc(c.name)}</td><td>${esc(c.variety||'-')}</td><td>${esc(c.fieldNo)}</td><td>${esc(c.studentName)}</td><td>${formatDate(c.sowDate)}</td><td>${formatDate(c.harvestDate)}</td><td class="no-print"><button class="btn btn-outline btn-sm" onclick="editCrop('${c.id}')">編集</button>${isTeacher()?` <button class="btn btn-danger btn-sm" onclick="deleteCrop('${c.id}')">削除</button>`:''}</td></tr>`; });
   h += '</tbody></table></div>';
   el.innerHTML = h;
 }
@@ -841,9 +912,10 @@ function renderGrowthList() {
     if (r.stage) d.push(`ステージ: ${r.stage}`); if (r.height) d.push(`草丈: ${r.height}cm`); if (r.stems) d.push(`茎数: ${r.stems}本`);
     if (r.leaves) d.push(`葉数: ${r.leaves}枚`); if (r.temp != null) d.push(`気温: ${r.temp}℃`);
     if (r.tillers) d.push(`分げつ数: ${r.tillers}`); if (r.lodging) d.push(`倒伏: ${r.lodging}`); if (r.fusarium) d.push(`赤かび病: ${r.fusarium}`); if (r.work) d.push(`作業: ${r.work}`);
-    h += `<div class="record-card"><div class="date">${formatDate(r.date)} - ${esc(cn)}</div><div class="meta">${d.map(x=>esc(x)).join(' ／ ')}</div>${r.memo?`<div class="content">${esc(r.memo)}</div>`:''}<div class="btn-group no-print"><button class="btn btn-outline btn-sm" onclick="editGrowth('${r.id}')">編集</button> <button class="btn btn-danger btn-sm" onclick="deleteGrowth('${r.id}')">削除</button></div></div>`;
+    h += `<div class="record-card" style="display:flex;gap:10px;align-items:flex-start"><input type="checkbox" class="bulk-check growth-bulk-cb no-print" data-id="${r.id}" onchange="toggleGrowthSelect('${r.id}',this.checked)"${growthSelectedIds.has(r.id)?' checked':''}><div style="flex:1"><div class="date">${formatDate(r.date)} - ${esc(cn)}</div><div class="meta">${d.map(x=>esc(x)).join(' ／ ')}</div>${r.memo?`<div class="content">${esc(r.memo)}</div>`:''}<div class="btn-group no-print"><button class="btn btn-outline btn-sm" onclick="editGrowth('${r.id}')">編集</button> <button class="btn btn-danger btn-sm" onclick="deleteGrowth('${r.id}')">削除</button></div></div></div>`;
   });
   el.innerHTML = h;
+  updateGrowthBulkBar();
 }
 
 // ============================================================
@@ -982,19 +1054,33 @@ let growthChartInstance = null, typeChartInstance = null;
 
 function updateChart() {
   const cropId = document.getElementById('chartCrop').value;
+  const cropId2 = document.getElementById('chartCrop2').value;
   const chartType = document.getElementById('chartType').value;
   const canvas = document.getElementById('growthChart');
   const ctx = canvas.getContext('2d');
   if (growthChartInstance) { growthChartInstance.destroy(); growthChartInstance = null; }
   if (!cropId) { ctx.clearRect(0,0,canvas.width,canvas.height); return; }
-  const records = getGrowth().filter(r => r.cropId === cropId).sort((a,b) => a.date.localeCompare(b.date));
-  const crop = getCrops().find(c => c.id === cropId);
-  const labels = records.map(r => formatDate(r.date));
   let dk, lb, cl;
   switch(chartType) { case 'height': dk='height';lb='草丈 (cm)';cl='#2e7d32';break; case 'stems': dk='stems';lb='茎数 (本)';cl='#1565c0';break; case 'leaves': dk='leaves';lb='葉数 (枚)';cl='#7b1fa2';break; case 'temp': dk='temp';lb='気温 (℃)';cl='#d32f2f';break; case 'tillers': dk='tillers';lb='分げつ数';cl='#e65100';break; }
-  const data = records.map(r => r[dk]);
-  if (data.every(v => v==null)) { ctx.clearRect(0,0,canvas.width,canvas.height); ctx.font='14px sans-serif'; ctx.fillStyle='#757575'; ctx.textAlign='center'; ctx.fillText('データがありません',canvas.width/2,canvas.height/2); return; }
-  growthChartInstance = new Chart(ctx, { type:'line', data:{ labels, datasets:[{ label:`${crop?crop.name:''} - ${lb}`, data, borderColor:cl, backgroundColor:cl+'20', fill:true, tension:.3, pointRadius:5, pointHoverRadius:7 }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top'}}, scales:{ y:{beginAtZero:true,title:{display:true,text:lb}}, x:{title:{display:true,text:'日付'}} } } });
+  const datasets = [];
+  const recs1 = getGrowth().filter(r => r.cropId === cropId).sort((a,b) => a.date.localeCompare(b.date));
+  const crop1 = getCrops().find(c => c.id === cropId);
+  const allLabels = new Set(recs1.map(r => r.date));
+  datasets.push({ label: `${crop1?crop1.name:''} - ${lb}`, data: recs1.map(r => r[dk]), borderColor: cl, backgroundColor: cl+'20', fill: false, tension:.3, pointRadius:5, pointHoverRadius:7 });
+  let labels = recs1.map(r => formatDate(r.date));
+  if (cropId2 && cropId2 !== cropId) {
+    const recs2 = getGrowth().filter(r => r.cropId === cropId2).sort((a,b) => a.date.localeCompare(b.date));
+    const crop2 = getCrops().find(c => c.id === cropId2);
+    recs2.forEach(r => allLabels.add(r.date));
+    const allDates = [...allLabels].sort();
+    labels = allDates.map(d => formatDate(d));
+    datasets[0].data = allDates.map(d => { const r = recs1.find(x => x.date === d); return r ? r[dk] : null; });
+    const cl2 = '#ff9800';
+    datasets.push({ label: `${crop2?crop2.name:''} - ${lb}`, data: allDates.map(d => { const r = recs2.find(x => x.date === d); return r ? r[dk] : null; }), borderColor: cl2, backgroundColor: cl2+'20', fill: false, tension:.3, pointRadius:5, pointHoverRadius:7, borderDash:[5,5] });
+  }
+  const allData = datasets.flatMap(ds => ds.data);
+  if (allData.every(v => v==null)) { ctx.clearRect(0,0,canvas.width,canvas.height); ctx.font='14px sans-serif'; ctx.fillStyle='#757575'; ctx.textAlign='center'; ctx.fillText('データがありません',canvas.width/2,canvas.height/2); return; }
+  growthChartInstance = new Chart(ctx, { type:'line', data:{ labels, datasets }, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top'}}, scales:{ y:{beginAtZero:true,title:{display:true,text:lb}}, x:{title:{display:true,text:'日付'}} }, spanGaps:true } });
 }
 
 function updateTypeChart() {
@@ -1002,9 +1088,9 @@ function updateTypeChart() {
   const ctx = canvas.getContext('2d');
   if (typeChartInstance) { typeChartInstance.destroy(); typeChartInstance = null; }
   const crops = getCrops();
-  const cnt = {rice:0,wheat:0,vegetable:0};
+  const cnt = {rice:0,wheat:0,vegetable:0,fruit:0,flower:0,bean:0};
   crops.forEach(c => { if (cnt[c.type]!==undefined) cnt[c.type]++; });
-  typeChartInstance = new Chart(ctx, { type:'doughnut', data:{ labels:['水稲','麦','野菜類'], datasets:[{ data:[cnt.rice,cnt.wheat,cnt.vegetable], backgroundColor:['#2e7d32','#e65100','#1565c0'] }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}} } });
+  typeChartInstance = new Chart(ctx, { type:'doughnut', data:{ labels:['水稲','麦','野菜類','果樹','花き','豆類'], datasets:[{ data:[cnt.rice,cnt.wheat,cnt.vegetable,cnt.fruit,cnt.flower,cnt.bean], backgroundColor:['#2e7d32','#e65100','#1565c0','#c62828','#7b1fa2','#4e342e'] }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}} } });
 }
 
 // ============================================================
@@ -1095,6 +1181,252 @@ function exportCSV() {
 }
 
 // ============================================================
+//  Bulk Delete for Growth Records
+// ============================================================
+let growthSelectedIds = new Set();
+
+function toggleGrowthSelectAll(checked) {
+  const checkboxes = document.querySelectorAll('.growth-bulk-cb');
+  checkboxes.forEach(cb => { cb.checked = checked; });
+  growthSelectedIds.clear();
+  if (checked) { checkboxes.forEach(cb => growthSelectedIds.add(cb.dataset.id)); }
+  updateGrowthBulkBar();
+}
+
+function toggleGrowthSelect(id, checked) {
+  if (checked) growthSelectedIds.add(id); else growthSelectedIds.delete(id);
+  updateGrowthBulkBar();
+}
+
+function updateGrowthBulkBar() {
+  const bar = document.getElementById('growthBulkBar');
+  const cnt = growthSelectedIds.size;
+  bar.style.display = cnt > 0 || document.querySelectorAll('.growth-bulk-cb').length > 0 ? '' : 'none';
+  document.getElementById('growthBulkCount').textContent = `${cnt}件選択中`;
+}
+
+function bulkDeleteGrowth() {
+  if (!growthSelectedIds.size) { showToast('記録が選択されていません'); return; }
+  showConfirm(`${growthSelectedIds.size}件の記録を削除しますか？`, async () => {
+    const ids = new Set(growthSelectedIds);
+    const remaining = getGrowth().filter(r => !ids.has(r.id));
+    const deleted = getGrowth().filter(r => ids.has(r.id));
+    await saveGrowth(remaining);
+    growthSelectedIds.clear();
+    document.getElementById('growthSelectAll').checked = false;
+    renderGrowthList(); showToast(`${ids.size}件の記録を削除しました`);
+    if (useFirebase) {
+      try { for (const r of deleted) await fsDelete('growth', r.id); }
+      catch (err) { console.error('Firestore delete error:', err); }
+    }
+  });
+}
+
+// ============================================================
+//  Calendar
+// ============================================================
+let calendarYear, calendarMonth;
+(function() { const d = new Date(); calendarYear = d.getFullYear(); calendarMonth = d.getMonth(); })();
+
+function calendarPrev() { calendarMonth--; if (calendarMonth < 0) { calendarMonth = 11; calendarYear--; } renderCalendar(); }
+function calendarNext() { calendarMonth++; if (calendarMonth > 11) { calendarMonth = 0; calendarYear++; } renderCalendar(); }
+function calendarToday() { const d = new Date(); calendarYear = d.getFullYear(); calendarMonth = d.getMonth(); renderCalendar(); }
+
+function renderCalendar() {
+  const label = document.getElementById('calendarMonthLabel');
+  if (!label) return;
+  label.textContent = `${calendarYear}年 ${calendarMonth + 1}月`;
+  const grid = document.getElementById('calendarGrid');
+  const today = new Date().toISOString().split('T')[0];
+  const firstDay = new Date(calendarYear, calendarMonth, 1);
+  const lastDay = new Date(calendarYear, calendarMonth + 1, 0);
+  const startDow = firstDay.getDay(); // 0=Sun
+
+  // Build events map by date
+  const events = {};
+  const crops = getCrops();
+  getGrowth().forEach(r => {
+    const crop = crops.find(c => c.id === r.cropId);
+    if (!events[r.date]) events[r.date] = [];
+    events[r.date].push({ type: 'growth', text: `${crop?crop.name:'?'} ${r.stage||'記録'}` });
+  });
+  getFert().forEach(r => {
+    const crop = crops.find(c => c.id === r.cropId);
+    if (!events[r.date]) events[r.date] = [];
+    events[r.date].push({ type: 'fert', text: `施肥: ${crop?crop.name:'?'}` });
+  });
+  getPest().forEach(r => {
+    const crop = crops.find(c => c.id === r.cropId);
+    if (!events[r.date]) events[r.date] = [];
+    events[r.date].push({ type: 'pest', text: `農薬: ${crop?crop.name:'?'}` });
+  });
+
+  let h = '';
+  const dayNames = ['日','月','火','水','木','金','土'];
+  dayNames.forEach(d => { h += `<div class="day-header">${d}</div>`; });
+
+  // Previous month filler
+  const prevLast = new Date(calendarYear, calendarMonth, 0);
+  for (let i = startDow - 1; i >= 0; i--) {
+    const dn = prevLast.getDate() - i;
+    h += `<div class="day-cell other-month"><div class="day-num">${dn}</div></div>`;
+  }
+
+  // Current month
+  for (let d = 1; d <= lastDay.getDate(); d++) {
+    const ds = `${calendarYear}-${String(calendarMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = ds === today;
+    h += `<div class="day-cell${isToday?' today':''}"><div class="day-num">${d}</div>`;
+    if (events[ds]) {
+      events[ds].slice(0, 3).forEach(e => {
+        const cls = e.type === 'fert' ? 'type-fert' : e.type === 'pest' ? 'type-pest' : '';
+        h += `<div class="cal-event ${cls}" title="${esc(e.text)}">${esc(e.text)}</div>`;
+      });
+      if (events[ds].length > 3) h += `<div class="cal-event" style="background:#eee;color:#666">+${events[ds].length - 3}件</div>`;
+    }
+    h += '</div>';
+  }
+
+  // Next month filler
+  const totalCells = startDow + lastDay.getDate();
+  const remaining = (7 - (totalCells % 7)) % 7;
+  for (let i = 1; i <= remaining; i++) {
+    h += `<div class="day-cell other-month"><div class="day-num">${i}</div></div>`;
+  }
+
+  grid.innerHTML = h;
+}
+
+// ============================================================
+//  CSV Import
+// ============================================================
+function importCSV() {
+  const fileInput = document.getElementById('csvFileInput');
+  const resultEl = document.getElementById('csvImportResult');
+  if (!fileInput.files.length) { showToast('CSVファイルを選択してください'); return; }
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      const text = e.target.result.replace(/^\uFEFF/, ''); // Remove BOM
+      const lines = text.split('\n').filter(l => l.trim());
+      if (lines.length < 2) { resultEl.innerHTML = '<span style="color:var(--danger)">データ行がありません</span>'; return; }
+
+      // Parse header to detect format
+      const header = lines[0];
+      const isExportFormat = header.includes('作物名') && header.includes('日付');
+      if (!isExportFormat) { resultEl.innerHTML = '<span style="color:var(--danger)">CSVフォーマットが認識できません。エクスポートしたCSVを使用してください。</span>'; return; }
+
+      let imported = 0, skipped = 0;
+      const crops = getCrops();
+      const growth = getGrowth().slice();
+      const typeMap = {'水稲':'rice','麦':'wheat','野菜類':'vegetable','果樹':'fruit','花き':'flower','豆類':'bean'};
+
+      for (let i = 1; i < lines.length; i++) {
+        const cols = parseCSVLine(lines[i]);
+        if (cols.length < 10) { skipped++; continue; }
+        const [cropName, variety, typeLbl, fieldNo, studentName, date, stage, height, stems, leavesStr, tempStr, tillers, lodging, fusarium, work, memo] = cols;
+        if (!cropName || !date) { skipped++; continue; }
+
+        // Find or create crop
+        let crop = crops.find(c => c.name === cropName && c.fieldNo === fieldNo && c.studentName === studentName);
+        if (!crop) {
+          crop = { id: genId(), type: typeMap[typeLbl] || 'vegetable', name: cropName, variety: variety || '', fieldNo: fieldNo || '', studentName: studentName || '', sowDate:'', plantDate:'', harvestDate:'', headingDate:'', earDate:'' };
+          crops.push(crop);
+        }
+
+        // Create growth record
+        growth.push({
+          id: genId(), cropId: crop.id, date, stage: stage||'',
+          height: parseFloat(height)||null, stems: parseInt(stems)||null,
+          leaves: parseInt(leavesStr)||null, temp: parseFloat(tempStr)||null,
+          tillers: parseInt(tillers)||null, lodging: lodging||'', fusarium: fusarium||'',
+          work: work||'', memo: memo||''
+        });
+        imported++;
+      }
+
+      await saveCrops(crops);
+      await saveGrowth(growth);
+      if (useFirebase) {
+        for (const c of crops) { try { await fsUpdate('crops', c.id, c); } catch(e){} }
+        for (const g of growth) { try { await fsUpdate('growth', g.id, g); } catch(e){} }
+      }
+      renderAll();
+      resultEl.innerHTML = `<span style="color:var(--success)">インポート完了: ${imported}件の記録を追加${skipped ? `（${skipped}件スキップ）` : ''}</span>`;
+      showToast(`${imported}件のCSVデータをインポートしました`);
+    } catch (err) {
+      resultEl.innerHTML = `<span style="color:var(--danger)">エラー: ${esc(err.message)}</span>`;
+    }
+  };
+  reader.readAsText(fileInput.files[0], 'UTF-8');
+}
+
+function parseCSVLine(line) {
+  const result = []; let current = ''; let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"' && line[i+1] === '"') { current += '"'; i++; }
+      else if (ch === '"') { inQuotes = false; }
+      else { current += ch; }
+    } else {
+      if (ch === '"') { inQuotes = true; }
+      else if (ch === ',') { result.push(current); current = ''; }
+      else { current += ch; }
+    }
+  }
+  result.push(current);
+  return result;
+}
+
+// ============================================================
+//  User Roles
+// ============================================================
+let currentUserRole = 'teacher'; // default
+
+function getUserRole() { return currentUserRole; }
+function isTeacher() { return currentUserRole === 'teacher'; }
+
+function applyRoleRestrictions() {
+  const roleEl = document.getElementById('displayUserRole');
+  if (roleEl) {
+    roleEl.innerHTML = isTeacher()
+      ? '<span class="role-badge role-teacher">教員</span>'
+      : '<span class="role-badge role-student">生徒</span>';
+  }
+  // Hide/show elements based on role
+  document.querySelectorAll('.teacher-only').forEach(el => {
+    el.style.display = isTeacher() ? '' : 'none';
+  });
+}
+
+async function loadUserRole() {
+  if (!useFirebase || !auth.currentUser) {
+    // Local mode: check localStorage
+    currentUserRole = localStorage.getItem('seiiku_role') || 'teacher';
+    return;
+  }
+  try {
+    const doc = await db.collection('users').doc(auth.currentUser.uid).get();
+    if (doc.exists) { currentUserRole = doc.data().role || 'teacher'; }
+    else { currentUserRole = 'teacher'; }
+  } catch (e) {
+    console.warn('Failed to load user role:', e);
+    currentUserRole = 'teacher';
+  }
+}
+
+async function saveUserRole(uid, role) {
+  if (!useFirebase) {
+    localStorage.setItem('seiiku_role', role);
+    return;
+  }
+  try {
+    await db.collection('users').doc(uid).set({ role }, { merge: true });
+  } catch (e) { console.warn('Failed to save user role:', e); }
+}
+
+// ============================================================
 //  Render All & Init
 // ============================================================
 function renderAll() {
@@ -1104,6 +1436,7 @@ function renderAll() {
   renderGrowthList();
   renderFertList();
   renderPestList();
+  applyRoleRestrictions();
 }
 
 function initApp() {
