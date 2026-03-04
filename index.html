@@ -76,6 +76,9 @@ tr:hover{background:#f9f9f9}
 .calendar-grid .day-cell .cal-event{background:var(--success-light);color:var(--primary-dark);border-radius:3px;padding:1px 4px;margin-bottom:1px;font-size:.65rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
 .calendar-grid .day-cell .cal-event.type-fert{background:var(--info-light);color:var(--info)}
 .calendar-grid .day-cell .cal-event.type-pest{background:#fff3e0;color:#e65100}
+.calendar-grid .day-cell .cal-event.type-sched{background:#ede7f6;color:#4527a0}
+.calendar-grid .day-cell{cursor:pointer}
+.calendar-grid .day-cell:not(.other-month):hover{background:#f0f4c3}
 /* Bulk select */
 .bulk-bar{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--info-light);border-radius:var(--radius);margin-bottom:12px}
 .bulk-bar .bulk-count{font-weight:700;color:var(--info)}
@@ -231,6 +234,7 @@ tr:hover{background:#f9f9f9}
   <!-- ダッシュボード -->
   <div id="dashboard" class="tab-content active">
     <div class="stats-grid" id="statsGrid"></div>
+    <div class="card"><div class="card-title">直近の作業予定</div><div id="dashSchedule"></div></div>
     <div class="card"><div class="card-title">最近の生育記録</div><div id="recentRecords"></div></div>
     <div class="card"><div class="card-title">今後の予定収穫</div><div id="upcomingHarvest"></div></div>
   </div>
@@ -345,8 +349,13 @@ tr:hover{background:#f9f9f9}
         <span class="month-label" id="calendarMonthLabel"></span>
         <button onclick="calendarNext()">翌月 &gt;</button>
         <button onclick="calendarToday()" style="margin-left:auto">今月</button>
+        <button class="btn btn-accent btn-sm" onclick="openScheduleModal()">+ 予定追加</button>
       </div>
       <div class="calendar-grid" id="calendarGrid"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">今後の作業予定</div>
+      <div id="scheduleList"></div>
     </div>
   </div>
 
@@ -403,6 +412,35 @@ tr:hover{background:#f9f9f9}
 </main>
 </div>
 
+<div id="scheduleModal" class="modal-overlay">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-body">
+      <div class="card-title" id="scheduleModalTitle">作業予定の登録</div>
+      <form id="scheduleForm" onsubmit="saveScheduleEntry(event)">
+        <div class="form-grid">
+          <div class="form-group"><label>日付 *</label><input type="date" id="schedDate" required></div>
+          <div class="form-group"><label>作物</label><select id="schedCrop"><option value="">（全体 / 指定なし）</option></select></div>
+          <div class="form-group"><label>作業内容 *</label><select id="schedWork" required>
+            <option value="">選択してください</option>
+            <option value="施肥">施肥</option><option value="農薬散布">農薬散布</option><option value="灌水">灌水</option>
+            <option value="除草">除草</option><option value="誘引">誘引</option><option value="摘芯">摘芯</option>
+            <option value="摘果">摘果</option><option value="収穫">収穫</option><option value="土寄せ">土寄せ</option>
+            <option value="中耕">中耕</option><option value="播種">播種</option><option value="定植">定植</option>
+            <option value="その他">その他</option>
+          </select></div>
+          <div class="form-group full"><label>メモ</label><textarea id="schedMemo" placeholder="詳細や注意事項など" rows="2"></textarea></div>
+        </div>
+        <input type="hidden" id="schedEditId">
+        <div class="btn-group">
+          <button type="submit" class="btn btn-primary">保存</button>
+          <button type="button" class="btn btn-outline" onclick="closeScheduleModal()">キャンセル</button>
+          <button type="button" class="btn btn-danger btn-sm" id="schedDeleteBtn" style="display:none;margin-left:auto" onclick="deleteScheduleEntry()">削除</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <div id="toast" class="toast"></div>
 <div id="confirmModal" class="modal-overlay">
   <div class="modal" style="max-width:400px;">
@@ -456,10 +494,10 @@ try {
 // ============================================================
 //  Data Layer — Firebase or localStorage
 // ============================================================
-const LS_KEYS = { crops: 'seiiku_crops', growth: 'seiiku_growth', fert: 'seiiku_fert', pest: 'seiiku_pest' };
+const LS_KEYS = { crops: 'seiiku_crops', growth: 'seiiku_growth', fert: 'seiiku_fert', pest: 'seiiku_pest', schedule: 'seiiku_schedule' };
 
 // In-memory cache (always used for rendering)
-let dataCache = { crops: [], growth: [], fert: [], pest: [] };
+let dataCache = { crops: [], growth: [], fert: [], pest: [], schedule: [] };
 
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 
@@ -472,6 +510,7 @@ function getCrops() { return dataCache.crops; }
 function getGrowth() { return dataCache.growth; }
 function getFert() { return dataCache.fert; }
 function getPest() { return dataCache.pest; }
+function getSchedule() { return dataCache.schedule; }
 
 // --- Save functions ---
 async function saveCrops(arr) {
@@ -489,6 +528,10 @@ async function saveFert(arr) {
 async function savePest(arr) {
   dataCache.pest = arr;
   if (!useFirebase) { lsSave(LS_KEYS.pest, arr); return; }
+}
+async function saveSchedule(arr) {
+  dataCache.schedule = arr;
+  if (!useFirebase) { lsSave(LS_KEYS.schedule, arr); return; }
 }
 
 // --- Firestore CRUD helpers ---
@@ -512,12 +555,13 @@ async function loadAllData() {
     dataCache.growth = lsLoad(LS_KEYS.growth);
     dataCache.fert = lsLoad(LS_KEYS.fert);
     dataCache.pest = lsLoad(LS_KEYS.pest);
+    dataCache.schedule = lsLoad(LS_KEYS.schedule);
     return;
   }
   // Firestore: set up real-time listeners
   return new Promise(resolve => {
     let loaded = 0;
-    const check = () => { if (++loaded >= 4) resolve(); };
+    const check = () => { if (++loaded >= 5) resolve(); };
 
     db.collection('crops').onSnapshot(snap => {
       dataCache.crops = snap.docs.map(d => d.data());
@@ -536,6 +580,11 @@ async function loadAllData() {
     }, check);
     db.collection('pesticides').onSnapshot(snap => {
       dataCache.pest = snap.docs.map(d => d.data());
+      renderAll();
+      check();
+    }, check);
+    db.collection('schedule').onSnapshot(snap => {
+      dataCache.schedule = snap.docs.map(d => d.data());
       renderAll();
       check();
     }, check);
@@ -690,7 +739,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.classList.add('active');
     document.getElementById(btn.dataset.tab).classList.add('active');
     if (btn.dataset.tab === 'dashboard') renderDashboard();
-    if (btn.dataset.tab === 'calendar') renderCalendar();
+    if (btn.dataset.tab === 'calendar') { renderCalendar(); renderScheduleList(); }
     if (btn.dataset.tab === 'charts') { updateChart(); updateTypeChart(); }
     if (btn.dataset.tab === 'students') renderStudentView();
   });
@@ -712,7 +761,7 @@ document.getElementById('growthCrop').addEventListener('change', function() {
 // ============================================================
 function populateCropSelects() {
   const crops = getCrops();
-  ['growthCrop','fertCrop','pestCrop','growthFilterCrop','fertFilterCrop','pestFilterCrop','chartCrop','chartCrop2','exportTarget'].forEach(id => {
+  ['growthCrop','fertCrop','pestCrop','growthFilterCrop','fertFilterCrop','pestFilterCrop','chartCrop','chartCrop2','exportTarget','schedCrop'].forEach(id => {
     const sel = document.getElementById(id);
     if (!sel) return;
     const val = sel.value;
@@ -1021,6 +1070,22 @@ function renderDashboard() {
     <div class="stat-card"><div class="num">${fert.length+pest.length}</div><div class="label">作業記録数</div></div>
     <div class="stat-card"><div class="num">${students.length}</div><div class="label">担当生徒数</div></div>`;
 
+  // Upcoming schedule on dashboard
+  const todayStr = new Date().toISOString().split('T')[0];
+  const dashSched = getSchedule().filter(s => s.date >= todayStr).sort((a,b) => a.date.localeCompare(b.date)).slice(0, 5);
+  const dsEl = document.getElementById('dashSchedule');
+  if (!dashSched.length) { dsEl.innerHTML = '<div class="empty-state"><p>今後の作業予定はありません</p></div>'; }
+  else {
+    let sh = '';
+    dashSched.forEach(s => {
+      const crop = s.cropId ? crops.find(c => c.id === s.cropId) : null;
+      const dl = Math.ceil((new Date(s.date) - new Date(todayStr)) / 864e5);
+      const col = dl <= 2 ? 'var(--danger)' : dl <= 7 ? 'var(--accent)' : 'var(--primary)';
+      sh += `<div class="record-card" style="border-left-color:${col}"><div class="date">${formatDate(s.date)} <span style="font-size:.8rem;color:var(--text-secondary)">${dl === 0 ? '(今日)' : `(あと${dl}日)`}</span></div><div class="meta">${esc(s.work)}${crop ? ' ／ ' + esc(crop.name) + '（' + esc(crop.fieldNo) + '）' : ''}</div>${s.memo ? `<div class="content">${esc(s.memo)}</div>` : ''}</div>`;
+    });
+    dsEl.innerHTML = sh;
+  }
+
   const recent = growth.slice().sort((a,b) => b.date.localeCompare(a.date)).slice(0,5);
   const rEl = document.getElementById('recentRecords');
   if (!recent.length) { rEl.innerHTML = '<div class="empty-state"><p>まだ記録がありません</p></div>'; }
@@ -1260,6 +1325,11 @@ function renderCalendar() {
     if (!events[r.date]) events[r.date] = [];
     events[r.date].push({ type: 'pest', text: `農薬: ${crop?crop.name:'?'}` });
   });
+  getSchedule().forEach(s => {
+    const crop = s.cropId ? crops.find(c => c.id === s.cropId) : null;
+    if (!events[s.date]) events[s.date] = [];
+    events[s.date].push({ type: 'sched', text: `予定: ${s.work}${crop?' ('+crop.name+')':''}`, id: s.id });
+  });
 
   let h = '';
   const dayNames = ['日','月','火','水','木','金','土'];
@@ -1276,11 +1346,15 @@ function renderCalendar() {
   for (let d = 1; d <= lastDay.getDate(); d++) {
     const ds = `${calendarYear}-${String(calendarMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const isToday = ds === today;
-    h += `<div class="day-cell${isToday?' today':''}"><div class="day-num">${d}</div>`;
+    h += `<div class="day-cell${isToday?' today':''}" onclick="openScheduleModal('${ds}')"><div class="day-num">${d}</div>`;
     if (events[ds]) {
       events[ds].slice(0, 3).forEach(e => {
-        const cls = e.type === 'fert' ? 'type-fert' : e.type === 'pest' ? 'type-pest' : '';
-        h += `<div class="cal-event ${cls}" title="${esc(e.text)}">${esc(e.text)}</div>`;
+        const cls = e.type === 'fert' ? 'type-fert' : e.type === 'pest' ? 'type-pest' : e.type === 'sched' ? 'type-sched' : '';
+        if (e.type === 'sched') {
+          h += `<div class="cal-event ${cls}" title="${esc(e.text)}" onclick="event.stopPropagation();editScheduleEntry('${e.id}')">${esc(e.text)}</div>`;
+        } else {
+          h += `<div class="cal-event ${cls}" title="${esc(e.text)}">${esc(e.text)}</div>`;
+        }
       });
       if (events[ds].length > 3) h += `<div class="cal-event" style="background:#eee;color:#666">+${events[ds].length - 3}件</div>`;
     }
@@ -1295,6 +1369,118 @@ function renderCalendar() {
   }
 
   grid.innerHTML = h;
+}
+
+// ============================================================
+//  Schedule CRUD
+// ============================================================
+function openScheduleModal(dateStr) {
+  document.getElementById('scheduleForm').reset();
+  document.getElementById('schedEditId').value = '';
+  document.getElementById('schedDeleteBtn').style.display = 'none';
+  document.getElementById('scheduleModalTitle').textContent = '作業予定の登録';
+  if (dateStr) document.getElementById('schedDate').value = dateStr;
+  else document.getElementById('schedDate').valueAsDate = new Date();
+  populateCropSelects();
+  document.getElementById('scheduleModal').classList.add('show');
+}
+
+function closeScheduleModal() {
+  document.getElementById('scheduleModal').classList.remove('show');
+}
+
+function editScheduleEntry(id) {
+  const s = getSchedule().find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('schedEditId').value = s.id;
+  document.getElementById('schedDate').value = s.date;
+  document.getElementById('schedCrop').value = s.cropId || '';
+  document.getElementById('schedWork').value = s.work;
+  document.getElementById('schedMemo').value = s.memo || '';
+  document.getElementById('schedDeleteBtn').style.display = '';
+  document.getElementById('scheduleModalTitle').textContent = '作業予定の編集';
+  document.getElementById('scheduleModal').classList.add('show');
+}
+
+async function saveScheduleEntry(e) {
+  e.preventDefault();
+  const records = getSchedule().slice();
+  const editId = document.getElementById('schedEditId').value;
+  const data = {
+    id: editId || genId(),
+    date: document.getElementById('schedDate').value,
+    cropId: document.getElementById('schedCrop').value || '',
+    work: document.getElementById('schedWork').value,
+    memo: document.getElementById('schedMemo').value.trim(),
+  };
+  if (editId) {
+    const i = records.findIndex(r => r.id === editId);
+    if (i >= 0) records[i] = data;
+  } else {
+    records.push(data);
+  }
+  await saveSchedule(records);
+  closeScheduleModal();
+  renderCalendar();
+  renderScheduleList();
+  showToast(editId ? '作業予定を更新しました' : '作業予定を登録しました');
+  if (useFirebase) {
+    try { await fsUpdate('schedule', data.id, data); }
+    catch (err) { console.error('Firestore write error:', err); showToast('サーバー保存に失敗しました'); }
+  }
+}
+
+function deleteScheduleEntry() {
+  const id = document.getElementById('schedEditId').value;
+  if (!id) return;
+  showConfirm('この作業予定を削除しますか？', async () => {
+    await saveSchedule(getSchedule().filter(r => r.id !== id));
+    closeScheduleModal();
+    renderCalendar();
+    renderScheduleList();
+    showToast('作業予定を削除しました');
+    if (useFirebase) {
+      try { await fsDelete('schedule', id); }
+      catch (err) { console.error('Firestore delete error:', err); }
+    }
+  });
+}
+
+function renderScheduleList() {
+  const el = document.getElementById('scheduleList');
+  if (!el) return;
+  const today = new Date().toISOString().split('T')[0];
+  const crops = getCrops();
+  const upcoming = getSchedule()
+    .filter(s => s.date >= today)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, 20);
+  if (!upcoming.length) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">📅</div><p>今後の作業予定はありません</p></div>';
+    return;
+  }
+  let h = '<div class="table-wrap"><table><thead><tr><th>日付</th><th>作業内容</th><th>作物</th><th>メモ</th><th class="no-print">操作</th></tr></thead><tbody>';
+  upcoming.forEach(s => {
+    const crop = s.cropId ? crops.find(c => c.id === s.cropId) : null;
+    const daysUntil = Math.ceil((new Date(s.date) - new Date(today)) / 864e5);
+    const urgency = daysUntil <= 2 ? 'color:var(--danger);font-weight:700' : daysUntil <= 7 ? 'color:var(--accent);font-weight:600' : '';
+    h += `<tr><td><span style="${urgency}">${formatDate(s.date)}</span> <span style="font-size:.75rem;color:var(--text-secondary)">${daysUntil === 0 ? '(今日)' : `(あと${daysUntil}日)`}</span></td><td>${esc(s.work)}</td><td>${crop ? esc(crop.name) + '（' + esc(crop.fieldNo) + '）' : '-'}</td><td>${esc(s.memo || '-')}</td><td class="no-print"><button class="btn btn-outline btn-sm" onclick="editScheduleEntry('${s.id}')">編集</button> <button class="btn btn-danger btn-sm" onclick="deleteScheduleFromList('${s.id}')">削除</button></td></tr>`;
+  });
+  h += '</tbody></table></div>';
+  el.innerHTML = h;
+}
+
+function deleteScheduleFromList(id) {
+  showConfirm('この作業予定を削除しますか？', async () => {
+    await saveSchedule(getSchedule().filter(r => r.id !== id));
+    renderCalendar();
+    renderScheduleList();
+    showToast('作業予定を削除しました');
+    if (useFirebase) {
+      try { await fsDelete('schedule', id); }
+      catch (err) { console.error('Firestore delete error:', err); }
+    }
+  });
 }
 
 // ============================================================
