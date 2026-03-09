@@ -35,6 +35,8 @@ main{padding:16px;max-width:1200px;margin:0 auto}
 .form-group label{font-size:.8rem;font-weight:600;color:var(--text-secondary)}
 .form-group input,.form-group select,.form-group textarea{padding:10px 12px;border:1px solid var(--border);border-radius:6px;font-size:.95rem;font-family:inherit;transition:border-color .2s}
 .form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(46,125,50,.15)}
+.form-group input.invalid,.form-group select.invalid{border-color:var(--danger);box-shadow:0 0 0 3px rgba(198,40,40,.15)}
+.form-group .field-error{color:var(--danger);font-size:.75rem;margin-top:2px;min-height:0}
 .form-group textarea{resize:vertical;min-height:80px}
 .form-group.full{grid-column:1/-1}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border:none;border-radius:6px;font-size:.9rem;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit}
@@ -128,7 +130,10 @@ tr:hover{background:#f9f9f9}
 .spinner{display:inline-block;width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite;margin-right:10px}
 @keyframes spin{to{transform:rotate(360deg)}}
 @media(max-width:600px){
+  header{flex-wrap:wrap;gap:6px;padding:10px 12px}
   header h1{font-size:.95rem}
+  .header-right{font-size:.75rem;gap:6px}
+  .header-right button{padding:4px 10px;font-size:.72rem}
   .tab-btn{padding:10px 12px;font-size:.78rem}
   main{padding:10px}
   .card{padding:14px}
@@ -137,9 +142,25 @@ tr:hover{background:#f9f9f9}
   .btn{padding:8px 14px;font-size:.82rem}
   .modal{margin-top:10px}
   .chart-container{height:250px}
-  .calendar-grid .day-cell{min-height:50px}
-  .calendar-grid .day-cell .cal-event{font-size:.6rem}
+  .calendar-grid .day-cell{min-height:56px;padding:3px;touch-action:manipulation}
+  .calendar-grid .day-cell .day-num{font-size:.85rem;padding:2px}
+  .calendar-grid .day-cell .cal-event{font-size:.6rem;padding:2px 3px}
+  .calendar-nav{flex-wrap:wrap;gap:8px}
+  .calendar-nav button{padding:8px 12px;font-size:.8rem;min-height:36px}
+  .calendar-nav .month-label{font-size:.95rem;min-width:auto}
   .login-card{padding:28px 20px}
+  table{font-size:.78rem}
+  th,td{padding:8px 6px}
+  .table-wrap{margin:0 -14px;border-radius:0;border-left:none;border-right:none}
+  .record-card{padding:12px}
+}
+@media(max-width:380px){
+  header h1 span{display:none}
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .stat-card .num{font-size:1.5rem}
+  .calendar-grid .day-cell{min-height:44px}
+  .filter-bar{flex-direction:column}
+  .filter-bar select,.filter-bar input{width:100%}
 }
 @media print{
   header,nav,.btn-group,.filter-bar,.no-print,.setup-banner{display:none!important}
@@ -211,16 +232,16 @@ tr:hover{background:#f9f9f9}
   </div>
 </header>
 
-<nav>
-  <div class="nav-inner">
-    <button class="tab-btn active" data-tab="dashboard">ダッシュボード</button>
-    <button class="tab-btn" data-tab="crops">作物管理</button>
-    <button class="tab-btn" data-tab="growth">生育記録</button>
-    <button class="tab-btn" data-tab="work">作業管理</button>
-    <button class="tab-btn" data-tab="calendar">カレンダー</button>
-    <button class="tab-btn" data-tab="charts">グラフ</button>
-    <button class="tab-btn teacher-only" data-tab="students">生徒管理</button>
-    <button class="tab-btn" data-tab="export">印刷・出力</button>
+<nav aria-label="メインナビゲーション">
+  <div class="nav-inner" role="tablist">
+    <button class="tab-btn active" data-tab="dashboard" role="tab" aria-selected="true" aria-controls="dashboard">ダッシュボード</button>
+    <button class="tab-btn" data-tab="crops" role="tab" aria-selected="false" aria-controls="crops">作物管理</button>
+    <button class="tab-btn" data-tab="growth" role="tab" aria-selected="false" aria-controls="growth">生育記録</button>
+    <button class="tab-btn" data-tab="work" role="tab" aria-selected="false" aria-controls="work">作業管理</button>
+    <button class="tab-btn" data-tab="calendar" role="tab" aria-selected="false" aria-controls="calendar">カレンダー</button>
+    <button class="tab-btn" data-tab="charts" role="tab" aria-selected="false" aria-controls="charts">グラフ</button>
+    <button class="tab-btn teacher-only" data-tab="students" role="tab" aria-selected="false" aria-controls="students">生徒管理</button>
+    <button class="tab-btn" data-tab="export" role="tab" aria-selected="false" aria-controls="export">印刷・出力</button>
   </div>
 </nav>
 
@@ -232,7 +253,7 @@ tr:hover{background:#f9f9f9}
   </div>
 
   <!-- ダッシュボード -->
-  <div id="dashboard" class="tab-content active">
+  <div id="dashboard" class="tab-content active" role="tabpanel" aria-labelledby="tab-dashboard">
     <div class="stats-grid" id="statsGrid"></div>
     <div class="card"><div class="card-title">直近の作業予定</div><div id="dashSchedule"></div></div>
     <div class="card"><div class="card-title">最近の生育記録</div><div id="recentRecords"></div></div>
@@ -240,7 +261,7 @@ tr:hover{background:#f9f9f9}
   </div>
 
   <!-- 作物管理 -->
-  <div id="crops" class="tab-content">
+  <div id="crops" class="tab-content" role="tabpanel" aria-labelledby="tab-crops">
     <div class="card">
       <div class="card-title">作物登録</div>
       <form id="cropForm">
@@ -271,7 +292,7 @@ tr:hover{background:#f9f9f9}
   </div>
 
   <!-- 生育記録 -->
-  <div id="growth" class="tab-content">
+  <div id="growth" class="tab-content" role="tabpanel" aria-labelledby="tab-growth">
     <div class="card">
       <div class="card-title">生育記録の入力</div>
       <form id="growthForm">
@@ -279,11 +300,11 @@ tr:hover{background:#f9f9f9}
           <div class="form-group"><label>作物 *</label><select id="growthCrop" required></select></div>
           <div class="form-group"><label>日付 *</label><input type="date" id="growthDate" required></div>
           <div class="form-group"><label>生育ステージ</label><select id="growthStage"><option value="">選択</option><option value="播種">播種</option><option value="発芽">発芽</option><option value="育苗">育苗</option><option value="定植">定植</option><option value="活着">活着</option><option value="生育初期">生育初期</option><option value="生育中期">生育中期</option><option value="生育後期">生育後期</option><option value="開花">開花</option><option value="結実">結実</option><option value="成熟">成熟</option><option value="収穫">収穫</option><option value="分げつ期">分げつ期</option><option value="幼穂形成期">幼穂形成期</option><option value="出穂期">出穂期</option><option value="登熟期">登熟期</option></select></div>
-          <div class="form-group"><label>草丈 (cm)</label><input type="number" id="growthHeight" step="0.1" min="0" placeholder="例: 25.5"></div>
-          <div class="form-group"><label>茎数 (本)</label><input type="number" id="growthStems" min="0" placeholder="例: 15"></div>
-          <div class="form-group"><label>葉の枚数 (枚)</label><input type="number" id="growthLeaves" min="0" placeholder="例: 8"></div>
-          <div class="form-group"><label>気温 (℃)</label><input type="number" id="growthTemp" step="0.1" placeholder="例: 25.3"></div>
-          <div id="growthRiceFields" class="grain-fields"><div class="form-group"><label>分げつ数</label><input type="number" id="growthTillers" min="0" placeholder="例: 20"></div><div class="form-group"><label>倒伏の有無</label><select id="growthLodging"><option value="">選択</option><option value="なし">なし</option><option value="軽微">軽微</option><option value="中程度">中程度</option><option value="甚大">甚大</option></select></div></div>
+          <div class="form-group"><label>草丈 (cm)</label><input type="number" id="growthHeight" step="0.1" min="0" max="500" placeholder="例: 25.5"></div>
+          <div class="form-group"><label>茎数 (本)</label><input type="number" id="growthStems" min="0" max="999" placeholder="例: 15"></div>
+          <div class="form-group"><label>葉の枚数 (枚)</label><input type="number" id="growthLeaves" min="0" max="999" placeholder="例: 8"></div>
+          <div class="form-group"><label>気温 (℃)</label><input type="number" id="growthTemp" step="0.1" min="-15" max="50" placeholder="例: 25.3"></div>
+          <div id="growthRiceFields" class="grain-fields"><div class="form-group"><label>分げつ数</label><input type="number" id="growthTillers" min="0" max="999" placeholder="例: 20"></div><div class="form-group"><label>倒伏の有無</label><select id="growthLodging"><option value="">選択</option><option value="なし">なし</option><option value="軽微">軽微</option><option value="中程度">中程度</option><option value="甚大">甚大</option></select></div></div>
           <div id="growthWheatFields" class="grain-fields"><div class="form-group"><label>赤かび病チェック</label><select id="growthFusarium"><option value="">選択</option><option value="発生なし">発生なし</option><option value="要注意">要注意</option><option value="発生あり">発生あり</option><option value="多発">多発</option></select></div></div>
           <div class="form-group full"><label>作業内容</label><select id="growthWork"><option value="">選択</option><option value="施肥">施肥</option><option value="農薬散布">農薬散布</option><option value="灌水">灌水</option><option value="除草">除草</option><option value="誘引">誘引</option><option value="摘芯">摘芯</option><option value="摘果">摘果</option><option value="収穫">収穫</option><option value="土寄せ">土寄せ</option><option value="中耕">中耕</option><option value="その他">その他</option></select></div>
           <div class="form-group full"><label>メモ・気づき</label><textarea id="growthMemo" placeholder="観察した内容、気づいたことを記入"></textarea></div>
@@ -309,7 +330,7 @@ tr:hover{background:#f9f9f9}
   </div>
 
   <!-- 作業管理 -->
-  <div id="work" class="tab-content">
+  <div id="work" class="tab-content" role="tabpanel" aria-labelledby="tab-work">
     <div class="card">
       <div class="card-title">施肥記録</div>
       <form id="fertForm">
@@ -341,7 +362,7 @@ tr:hover{background:#f9f9f9}
   </div>
 
   <!-- カレンダー -->
-  <div id="calendar" class="tab-content">
+  <div id="calendar" class="tab-content" role="tabpanel" aria-labelledby="tab-calendar">
     <div class="card">
       <div class="card-title">カレンダー表示</div>
       <div class="calendar-nav no-print">
@@ -360,7 +381,7 @@ tr:hover{background:#f9f9f9}
   </div>
 
   <!-- グラフ -->
-  <div id="charts" class="tab-content">
+  <div id="charts" class="tab-content" role="tabpanel" aria-labelledby="tab-charts">
     <div class="card">
       <div class="card-title">生育データグラフ</div>
       <div class="filter-bar no-print">
@@ -374,7 +395,7 @@ tr:hover{background:#f9f9f9}
   </div>
 
   <!-- 生徒管理 -->
-  <div id="students" class="tab-content">
+  <div id="students" class="tab-content" role="tabpanel" aria-labelledby="tab-students">
     <div class="card">
       <div class="card-title">生徒別 担当作物・記録管理</div>
       <div class="filter-bar no-print"><select id="studentFilter" onchange="renderStudentView()"><option value="">全生徒</option></select></div>
@@ -383,7 +404,7 @@ tr:hover{background:#f9f9f9}
   </div>
 
   <!-- 印刷・出力 -->
-  <div id="export" class="tab-content">
+  <div id="export" class="tab-content" role="tabpanel" aria-labelledby="tab-export">
     <div class="card">
       <div class="card-title">印刷・PDF出力</div>
       <div class="form-grid">
@@ -412,7 +433,7 @@ tr:hover{background:#f9f9f9}
 </main>
 </div>
 
-<div id="scheduleModal" class="modal-overlay">
+<div id="scheduleModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="scheduleModalTitle">
   <div class="modal" style="max-width:500px;">
     <div class="modal-body">
       <div class="card-title" id="scheduleModalTitle">作業予定の登録</div>
@@ -441,8 +462,8 @@ tr:hover{background:#f9f9f9}
   </div>
 </div>
 
-<div id="toast" class="toast"></div>
-<div id="confirmModal" class="modal-overlay">
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<div id="confirmModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="confirmMsg">
   <div class="modal" style="max-width:400px;">
     <div class="modal-body confirm-dialog">
       <p id="confirmMsg"></p>
@@ -701,6 +722,38 @@ if (useFirebase) {
 // ============================================================
 //  Utility
 // ============================================================
+// ============================================================
+//  Validation Helpers
+// ============================================================
+function clearValidation(form) {
+  form.querySelectorAll('.invalid').forEach(el => el.classList.remove('invalid'));
+  form.querySelectorAll('.field-error').forEach(el => el.remove());
+}
+function markInvalid(input, msg) {
+  input.classList.add('invalid');
+  const err = document.createElement('div');
+  err.className = 'field-error';
+  err.textContent = msg;
+  input.parentElement.appendChild(err);
+}
+function validateCropDates(sowDate, plantDate, harvestDate) {
+  const errors = [];
+  if (sowDate && plantDate && sowDate > plantDate) errors.push({ field: 'cropPlantDate', msg: '定植日は播種日より後に設定してください' });
+  if (plantDate && harvestDate && plantDate > harvestDate) errors.push({ field: 'cropHarvestDate', msg: '予定収穫日は定植日より後に設定してください' });
+  if (sowDate && harvestDate && sowDate > harvestDate) errors.push({ field: 'cropHarvestDate', msg: '予定収穫日は播種日より後に設定してください' });
+  return errors;
+}
+function validateNumericRange(value, min, max, fieldId, label) {
+  if (value === null || value === '' || isNaN(value)) return null;
+  const num = parseFloat(value);
+  if (num < min) return { field: fieldId, msg: `${label}は${min}以上で入力してください` };
+  if (num > max) return { field: fieldId, msg: `${label}は${max}以下で入力してください` };
+  return null;
+}
+function checkDuplicateGrowth(cropId, date, editId) {
+  return getGrowth().some(r => r.cropId === cropId && r.date === date && r.id !== editId);
+}
+
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -726,22 +779,40 @@ function showConfirm(msg, cb) {
   document.getElementById('confirmModal').classList.add('show');
   confirmCallback = cb;
   document.getElementById('confirmYes').onclick = () => { const fn = confirmCallback; closeConfirm(); if (fn) fn(); };
+  setTimeout(() => { document.getElementById('confirmYes').focus(); }, 100);
 }
 function closeConfirm() { document.getElementById('confirmModal').classList.remove('show'); confirmCallback = null; }
+// Close modals on Escape key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (document.getElementById('confirmModal').classList.contains('show')) closeConfirm();
+    if (document.getElementById('scheduleModal').classList.contains('show')) closeScheduleModal();
+  }
+});
 
 // ============================================================
 //  Tab Navigation
 // ============================================================
+function switchTab(btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  btn.setAttribute('aria-selected', 'true');
+  document.getElementById(btn.dataset.tab).classList.add('active');
+  if (btn.dataset.tab === 'dashboard') renderDashboard();
+  if (btn.dataset.tab === 'calendar') { renderCalendar(); renderScheduleList(); }
+  if (btn.dataset.tab === 'charts') { updateChart(); updateTypeChart(); }
+  if (btn.dataset.tab === 'students') renderStudentView();
+}
 document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById(btn.dataset.tab).classList.add('active');
-    if (btn.dataset.tab === 'dashboard') renderDashboard();
-    if (btn.dataset.tab === 'calendar') { renderCalendar(); renderScheduleList(); }
-    if (btn.dataset.tab === 'charts') { updateChart(); updateTypeChart(); }
-    if (btn.dataset.tab === 'students') renderStudentView();
+  btn.addEventListener('click', () => switchTab(btn));
+  btn.addEventListener('keydown', (e) => {
+    const tabs = [...document.querySelectorAll('.tab-btn')].filter(t => t.style.display !== 'none');
+    const idx = tabs.indexOf(btn);
+    let target = null;
+    if (e.key === 'ArrowRight') target = tabs[(idx + 1) % tabs.length];
+    else if (e.key === 'ArrowLeft') target = tabs[(idx - 1 + tabs.length) % tabs.length];
+    if (target) { e.preventDefault(); target.focus(); switchTab(target); }
   });
 });
 
@@ -791,6 +862,7 @@ function populateCropSelects() {
 // ============================================================
 document.getElementById('cropForm').addEventListener('submit', async function(e) {
   e.preventDefault();
+  clearValidation(this);
   const crops = getCrops().slice();
   const editId = document.getElementById('cropEditId').value;
   const data = {
@@ -806,6 +878,12 @@ document.getElementById('cropForm').addEventListener('submit', async function(e)
     headingDate: document.getElementById('cropHeadingDate').value,
     earDate: document.getElementById('cropEarDate').value,
   };
+  // Date consistency validation
+  const dateErrors = validateCropDates(data.sowDate, data.plantDate, data.harvestDate);
+  if (dateErrors.length) {
+    dateErrors.forEach(err => markInvalid(document.getElementById(err.field), err.msg));
+    return;
+  }
   if (editId) { const idx = crops.findIndex(c => c.id === editId); if (idx >= 0) crops[idx] = data; }
   else crops.push(data);
   await saveCrops(crops);
@@ -841,14 +919,16 @@ function editCrop(id) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 function deleteCrop(id) {
-  showConfirm('この作物と関連する全記録を削除しますか？', async () => {
+  showConfirm('この作物と関連する全記録（スケジュール含む）を削除しますか？', async () => {
     await saveCrops(getCrops().filter(c => c.id !== id));
     const gDel = getGrowth().filter(g => g.cropId === id);
     const fDel = getFert().filter(f => f.cropId === id);
     const pDel = getPest().filter(p => p.cropId === id);
+    const sDel = getSchedule().filter(s => s.cropId === id);
     await saveGrowth(getGrowth().filter(g => g.cropId !== id));
     await saveFert(getFert().filter(f => f.cropId !== id));
     await savePest(getPest().filter(p => p.cropId !== id));
+    await saveSchedule(getSchedule().filter(s => s.cropId !== id));
     renderAll();
     showToast('作物を削除しました');
     if (useFirebase) {
@@ -857,6 +937,7 @@ function deleteCrop(id) {
         for (const g of gDel) await fsDelete('growth', g.id);
         for (const f of fDel) await fsDelete('fertilizers', f.id);
         for (const p of pDel) await fsDelete('pesticides', p.id);
+        for (const s of sDel) await fsDelete('schedule', s.id);
       } catch (err) { console.error('Firestore delete error:', err); showToast('サーバー削除に失敗しました'); }
     }
   });
@@ -883,6 +964,7 @@ function renderCropList() {
 // ============================================================
 document.getElementById('growthForm').addEventListener('submit', async function(e) {
   e.preventDefault();
+  clearValidation(this);
   const records = getGrowth().slice();
   const editId = document.getElementById('growthEditId').value;
   const data = {
@@ -900,6 +982,23 @@ document.getElementById('growthForm').addEventListener('submit', async function(
     work: document.getElementById('growthWork').value,
     memo: document.getElementById('growthMemo').value.trim(),
   };
+  // Numeric range validation
+  const numErrors = [
+    validateNumericRange(data.height, 0, 500, 'growthHeight', '草丈'),
+    validateNumericRange(data.stems, 0, 999, 'growthStems', '茎数'),
+    validateNumericRange(data.leaves, 0, 999, 'growthLeaves', '葉数'),
+    validateNumericRange(data.temp, -15, 50, 'growthTemp', '気温'),
+    validateNumericRange(data.tillers, 0, 999, 'growthTillers', '分げつ数'),
+  ].filter(Boolean);
+  if (numErrors.length) {
+    numErrors.forEach(err => markInvalid(document.getElementById(err.field), err.msg));
+    return;
+  }
+  // Duplicate check
+  if (checkDuplicateGrowth(data.cropId, data.date, editId || '')) {
+    markInvalid(document.getElementById('growthDate'), '同じ作物・同じ日付の記録が既にあります');
+    return;
+  }
   if (editId) { const i = records.findIndex(r => r.id === editId); if (i >= 0) records[i] = data; }
   else records.push(data);
   await saveGrowth(records);
@@ -1081,7 +1180,8 @@ function renderDashboard() {
       const crop = s.cropId ? crops.find(c => c.id === s.cropId) : null;
       const dl = Math.ceil((new Date(s.date) - new Date(todayStr)) / 864e5);
       const col = dl <= 2 ? 'var(--danger)' : dl <= 7 ? 'var(--accent)' : 'var(--primary)';
-      sh += `<div class="record-card" style="border-left-color:${col}"><div class="date">${formatDate(s.date)} <span style="font-size:.8rem;color:var(--text-secondary)">${dl === 0 ? '(今日)' : `(あと${dl}日)`}</span></div><div class="meta">${esc(s.work)}${crop ? ' ／ ' + esc(crop.name) + '（' + esc(crop.fieldNo) + '）' : ''}</div>${s.memo ? `<div class="content">${esc(s.memo)}</div>` : ''}</div>`;
+      const urgIcon = dl <= 2 ? '<span aria-label="緊急">!! </span>' : dl <= 7 ? '<span aria-label="近日">! </span>' : '';
+      sh += `<div class="record-card" style="border-left-color:${col}"><div class="date">${urgIcon}${formatDate(s.date)} <span style="font-size:.8rem;color:var(--text-secondary)">${dl === 0 ? '(今日)' : `(あと${dl}日)`}</span></div><div class="meta">${esc(s.work)}${crop ? ' ／ ' + esc(crop.name) + '（' + esc(crop.fieldNo) + '）' : ''}</div>${s.memo ? `<div class="content">${esc(s.memo)}</div>` : ''}</div>`;
     });
     dsEl.innerHTML = sh;
   }
@@ -1382,7 +1482,10 @@ function openScheduleModal(dateStr) {
   if (dateStr) document.getElementById('schedDate').value = dateStr;
   else document.getElementById('schedDate').valueAsDate = new Date();
   populateCropSelects();
-  document.getElementById('scheduleModal').classList.add('show');
+  const modal = document.getElementById('scheduleModal');
+  modal.classList.add('show');
+  // Focus first input for accessibility
+  setTimeout(() => { document.getElementById('schedDate').focus(); }, 100);
 }
 
 function closeScheduleModal() {
@@ -1464,7 +1567,8 @@ function renderScheduleList() {
     const crop = s.cropId ? crops.find(c => c.id === s.cropId) : null;
     const daysUntil = Math.ceil((new Date(s.date) - new Date(today)) / 864e5);
     const urgency = daysUntil <= 2 ? 'color:var(--danger);font-weight:700' : daysUntil <= 7 ? 'color:var(--accent);font-weight:600' : '';
-    h += `<tr><td><span style="${urgency}">${formatDate(s.date)}</span> <span style="font-size:.75rem;color:var(--text-secondary)">${daysUntil === 0 ? '(今日)' : `(あと${daysUntil}日)`}</span></td><td>${esc(s.work)}</td><td>${crop ? esc(crop.name) + '（' + esc(crop.fieldNo) + '）' : '-'}</td><td>${esc(s.memo || '-')}</td><td class="no-print"><button class="btn btn-outline btn-sm" onclick="editScheduleEntry('${s.id}')">編集</button> <button class="btn btn-danger btn-sm" onclick="deleteScheduleFromList('${s.id}')">削除</button></td></tr>`;
+    const urgencyIcon = daysUntil <= 2 ? '<span aria-label="緊急" title="緊急">!!</span> ' : daysUntil <= 7 ? '<span aria-label="近日" title="近日">!</span> ' : '';
+    h += `<tr><td>${urgencyIcon}<span style="${urgency}">${formatDate(s.date)}</span> <span style="font-size:.75rem;color:var(--text-secondary)">${daysUntil === 0 ? '(今日)' : `(あと${daysUntil}日)`}</span></td><td>${esc(s.work)}</td><td>${crop ? esc(crop.name) + '（' + esc(crop.fieldNo) + '）' : '-'}</td><td>${esc(s.memo || '-')}</td><td class="no-print"><button class="btn btn-outline btn-sm" onclick="editScheduleEntry('${s.id}')">編集</button> <button class="btn btn-danger btn-sm" onclick="deleteScheduleFromList('${s.id}')">削除</button></td></tr>`;
   });
   h += '</tbody></table></div>';
   el.innerHTML = h;
