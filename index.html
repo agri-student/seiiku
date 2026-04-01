@@ -90,6 +90,20 @@ tr:hover{background:#f9f9f9}
 .role-teacher{background:#e8eaf6;color:#283593}
 .role-student{background:#e8f5e9;color:#2e7d32}
 .grain-fields{display:none}.grain-fields.show{display:contents}
+/* Report styles */
+.report-status{display:inline-block;padding:3px 10px;border-radius:12px;font-size:.75rem;font-weight:600}
+.status-draft{background:#f5f5f5;color:#757575}
+.status-submitted{background:#e3f2fd;color:#1565c0}
+.status-reviewed{background:#e8f5e9;color:#2e7d32}
+.report-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:12px;border-left:4px solid var(--info)}
+.report-card.reviewed{border-left-color:var(--success)}
+.report-card.draft{border-left-color:var(--border)}
+.report-card .report-header{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.report-card .report-title{font-weight:700;color:var(--primary-dark);font-size:1rem}
+.report-card .report-meta{font-size:.82rem;color:var(--text-secondary);margin-bottom:8px}
+.report-card .report-body{font-size:.9rem;line-height:1.7;white-space:pre-wrap;margin-bottom:10px;padding:12px;background:#fafafa;border-radius:6px}
+.feedback-box{background:var(--success-light);border-radius:6px;padding:12px;margin-top:10px;font-size:.88rem}
+.feedback-box .fb-label{font-weight:700;color:var(--primary-dark);font-size:.82rem;margin-bottom:6px}
 .print-section{margin-bottom:24px}
 .record-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:12px;border-left:4px solid var(--primary)}
 .record-card .date{font-weight:700;color:var(--primary-dark);margin-bottom:8px}
@@ -241,6 +255,7 @@ tr:hover{background:#f9f9f9}
     <button class="tab-btn" data-tab="calendar" role="tab" aria-selected="false" aria-controls="calendar">カレンダー</button>
     <button class="tab-btn" data-tab="charts" role="tab" aria-selected="false" aria-controls="charts">グラフ</button>
     <button class="tab-btn teacher-only" data-tab="students" role="tab" aria-selected="false" aria-controls="students">生徒管理</button>
+    <button class="tab-btn" data-tab="reports" role="tab" aria-selected="false" aria-controls="reports">考察・レポート</button>
     <button class="tab-btn" data-tab="export" role="tab" aria-selected="false" aria-controls="export">印刷・出力</button>
   </div>
 </nav>
@@ -403,6 +418,42 @@ tr:hover{background:#f9f9f9}
     </div>
   </div>
 
+  <!-- 考察・レポート -->
+  <div id="reports" class="tab-content" role="tabpanel" aria-labelledby="tab-reports">
+    <div class="card">
+      <div class="card-title">考察レポート作成</div>
+      <p style="font-size:.85rem;color:var(--text-secondary);margin-bottom:12px">グラフや生育記録を基に、なぜそうなったのかを考察し、レポートとして教員に提出できます。</p>
+      <form id="reportForm">
+        <div class="form-grid">
+          <div class="form-group"><label>対象作物 *</label><select id="reportCrop" required></select></div>
+          <div class="form-group"><label>分析項目</label><select id="reportMetric"><option value="height">草丈の推移</option><option value="stems">茎数の推移</option><option value="leaves">葉数の推移</option><option value="temp">気温の推移</option><option value="tillers">分げつ数の推移</option><option value="overall">総合考察</option></select></div>
+          <div class="form-group full"><label>レポートタイトル *</label><input type="text" id="reportTitle" placeholder="例: トマトの草丈が停滞した原因の考察" required></div>
+          <div class="form-group full"><label>観察したデータの概要</label><textarea id="reportObservation" rows="3" placeholder="グラフや記録から読み取れる事実を記入&#10;例: 7月10日〜20日にかけて草丈の伸びが鈍化し、25cmから27cmにしか成長しなかった。"></textarea></div>
+          <div class="form-group full"><label>考察（なぜそうなったか） *</label><textarea id="reportAnalysis" rows="5" placeholder="データの変化の原因を自分なりに考察してください&#10;例: この期間は気温が35℃以上の猛暑日が続き、高温障害により生育が抑制されたと考えられる。また、灌水が十分でなかった可能性もある。" required></textarea></div>
+          <div class="form-group full"><label>今後の改善点・対策</label><textarea id="reportImprovement" rows="3" placeholder="今後どうすべきかを記入&#10;例: 遮光ネットの設置や、朝夕の灌水頻度を増やすことで高温期の生育低下を防ぎたい。"></textarea></div>
+        </div>
+        <input type="hidden" id="reportEditId">
+        <div class="btn-group no-print">
+          <button type="submit" class="btn btn-primary">下書き保存</button>
+          <button type="button" class="btn btn-accent" onclick="submitReport()">教員に提出</button>
+          <button type="button" class="btn btn-outline" onclick="resetReportForm()">クリア</button>
+        </div>
+      </form>
+    </div>
+    <div class="card" id="reportMiniChartCard" style="display:none">
+      <div class="card-title">参考グラフ</div>
+      <div class="chart-container" style="max-height:250px"><canvas id="reportChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">レポート一覧</div>
+      <div class="filter-bar no-print">
+        <select id="reportFilterStatus" onchange="renderReportList()"><option value="">全ステータス</option><option value="draft">下書き</option><option value="submitted">提出済み</option><option value="reviewed">フィードバック済み</option></select>
+        <select id="reportFilterStudent" onchange="renderReportList()"><option value="">全生徒</option></select>
+      </div>
+      <div id="reportList"></div>
+    </div>
+  </div>
+
   <!-- 印刷・出力 -->
   <div id="export" class="tab-content" role="tabpanel" aria-labelledby="tab-export">
     <div class="card">
@@ -462,6 +513,36 @@ tr:hover{background:#f9f9f9}
   </div>
 </div>
 
+<div id="feedbackModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="feedbackModalTitle">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-body">
+      <div class="card-title" id="feedbackModalTitle">フィードバック</div>
+      <div id="feedbackReportSummary" style="font-size:.88rem;margin-bottom:12px;padding:12px;background:#f9f9f9;border-radius:6px;max-height:200px;overflow-y:auto"></div>
+      <form id="feedbackForm" onsubmit="saveFeedback(event)">
+        <div class="form-group" style="margin-bottom:12px">
+          <label>評価</label>
+          <select id="feedbackRating" required>
+            <option value="">選択してください</option>
+            <option value="excellent">優秀 - 深い考察ができている</option>
+            <option value="good">良好 - 適切な考察ができている</option>
+            <option value="fair">普通 - もう少し深堀りが必要</option>
+            <option value="revise">要修正 - 考察を見直してください</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:12px">
+          <label>教員コメント *</label>
+          <textarea id="feedbackComment" rows="4" placeholder="生徒へのフィードバックを記入&#10;例: 気温と生育の関連に着目した点は良いです。さらに土壌水分量のデータも考慮すると、より説得力のある考察になります。" required></textarea>
+        </div>
+        <input type="hidden" id="feedbackReportId">
+        <div class="btn-group">
+          <button type="submit" class="btn btn-primary">フィードバックを送信</button>
+          <button type="button" class="btn btn-outline" onclick="closeFeedbackModal()">キャンセル</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 <div id="confirmModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="confirmMsg">
   <div class="modal" style="max-width:400px;">
@@ -515,10 +596,10 @@ try {
 // ============================================================
 //  Data Layer — Firebase or localStorage
 // ============================================================
-const LS_KEYS = { crops: 'seiiku_crops', growth: 'seiiku_growth', fert: 'seiiku_fert', pest: 'seiiku_pest', schedule: 'seiiku_schedule' };
+const LS_KEYS = { crops: 'seiiku_crops', growth: 'seiiku_growth', fert: 'seiiku_fert', pest: 'seiiku_pest', schedule: 'seiiku_schedule', reports: 'seiiku_reports' };
 
 // In-memory cache (always used for rendering)
-let dataCache = { crops: [], growth: [], fert: [], pest: [], schedule: [] };
+let dataCache = { crops: [], growth: [], fert: [], pest: [], schedule: [], reports: [] };
 
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 
@@ -532,6 +613,7 @@ function getGrowth() { return dataCache.growth; }
 function getFert() { return dataCache.fert; }
 function getPest() { return dataCache.pest; }
 function getSchedule() { return dataCache.schedule; }
+function getReports() { return dataCache.reports; }
 
 // --- Save functions ---
 async function saveCrops(arr) {
@@ -553,6 +635,10 @@ async function savePest(arr) {
 async function saveSchedule(arr) {
   dataCache.schedule = arr;
   if (!useFirebase) { lsSave(LS_KEYS.schedule, arr); return; }
+}
+async function saveReports(arr) {
+  dataCache.reports = arr;
+  if (!useFirebase) { lsSave(LS_KEYS.reports, arr); return; }
 }
 
 // --- Firestore CRUD helpers ---
@@ -577,12 +663,13 @@ async function loadAllData() {
     dataCache.fert = lsLoad(LS_KEYS.fert);
     dataCache.pest = lsLoad(LS_KEYS.pest);
     dataCache.schedule = lsLoad(LS_KEYS.schedule);
+    dataCache.reports = lsLoad(LS_KEYS.reports);
     return;
   }
   // Firestore: set up real-time listeners
   return new Promise(resolve => {
     let loaded = 0;
-    const check = () => { if (++loaded >= 5) resolve(); };
+    const check = () => { if (++loaded >= 6) resolve(); };
 
     db.collection('crops').onSnapshot(snap => {
       dataCache.crops = snap.docs.map(d => d.data());
@@ -606,6 +693,11 @@ async function loadAllData() {
     }, check);
     db.collection('schedule').onSnapshot(snap => {
       dataCache.schedule = snap.docs.map(d => d.data());
+      renderAll();
+      check();
+    }, check);
+    db.collection('reports').onSnapshot(snap => {
+      dataCache.reports = snap.docs.map(d => d.data());
       renderAll();
       check();
     }, check);
@@ -803,6 +895,7 @@ function switchTab(btn) {
   if (btn.dataset.tab === 'calendar') { renderCalendar(); renderScheduleList(); }
   if (btn.dataset.tab === 'charts') { updateChart(); updateTypeChart(); }
   if (btn.dataset.tab === 'students') renderStudentView();
+  if (btn.dataset.tab === 'reports') renderReportList();
 }
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => switchTab(btn));
@@ -832,7 +925,7 @@ document.getElementById('growthCrop').addEventListener('change', function() {
 // ============================================================
 function populateCropSelects() {
   const crops = getCrops();
-  ['growthCrop','fertCrop','pestCrop','growthFilterCrop','fertFilterCrop','pestFilterCrop','chartCrop','chartCrop2','exportTarget','schedCrop'].forEach(id => {
+  ['growthCrop','fertCrop','pestCrop','growthFilterCrop','fertFilterCrop','pestFilterCrop','chartCrop','chartCrop2','exportTarget','schedCrop','reportCrop'].forEach(id => {
     const sel = document.getElementById(id);
     if (!sel) return;
     const val = sel.value;
@@ -1161,13 +1254,15 @@ function renderPestList() {
 //  Dashboard
 // ============================================================
 function renderDashboard() {
-  const crops = getCrops(), growth = getGrowth(), fert = getFert(), pest = getPest();
+  const crops = getCrops(), growth = getGrowth(), fert = getFert(), pest = getPest(), reports = getReports();
   const students = [...new Set(crops.map(c => c.studentName))];
+  const pendingReports = reports.filter(r => r.status === 'submitted').length;
   document.getElementById('statsGrid').innerHTML = `
     <div class="stat-card"><div class="num">${crops.length}</div><div class="label">登録作物数</div></div>
     <div class="stat-card"><div class="num">${growth.length}</div><div class="label">生育記録数</div></div>
     <div class="stat-card"><div class="num">${fert.length+pest.length}</div><div class="label">作業記録数</div></div>
-    <div class="stat-card"><div class="num">${students.length}</div><div class="label">担当生徒数</div></div>`;
+    <div class="stat-card"><div class="num">${students.length}</div><div class="label">担当生徒数</div></div>
+    <div class="stat-card" style="border-left-color:var(--info)"><div class="num">${pendingReports}</div><div class="label">未確認レポート</div></div>`;
 
   // Upcoming schedule on dashboard
   const todayStr = new Date().toISOString().split('T')[0];
@@ -1717,6 +1812,234 @@ async function saveUserRole(uid, role) {
 }
 
 // ============================================================
+//  Reports — 考察・レポート
+// ============================================================
+let reportChartInstance = null;
+
+// Show mini chart when crop/metric changes
+function updateReportChart() {
+  const cropId = document.getElementById('reportCrop').value;
+  const metric = document.getElementById('reportMetric').value;
+  const card = document.getElementById('reportMiniChartCard');
+  const canvas = document.getElementById('reportChart');
+  const ctx = canvas.getContext('2d');
+  if (reportChartInstance) { reportChartInstance.destroy(); reportChartInstance = null; }
+  if (!cropId || metric === 'overall') { card.style.display = 'none'; return; }
+  const recs = getGrowth().filter(r => r.cropId === cropId).sort((a,b) => a.date.localeCompare(b.date));
+  const labels = recs.map(r => formatDate(r.date));
+  const keyMap = { height:'height', stems:'stems', leaves:'leaves', temp:'temp', tillers:'tillers' };
+  const lblMap = { height:'草丈 (cm)', stems:'茎数 (本)', leaves:'葉数 (枚)', temp:'気温 (℃)', tillers:'分げつ数' };
+  const colMap = { height:'#2e7d32', stems:'#1565c0', leaves:'#7b1fa2', temp:'#d32f2f', tillers:'#e65100' };
+  const data = recs.map(r => r[keyMap[metric]]);
+  if (data.every(v => v == null)) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  reportChartInstance = new Chart(ctx, { type:'line', data:{ labels, datasets:[{ label:lblMap[metric], data, borderColor:colMap[metric], backgroundColor:colMap[metric]+'20', fill:true, tension:.3, pointRadius:4 }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{beginAtZero:true,title:{display:true,text:lblMap[metric]}} }, spanGaps:true } });
+}
+
+document.getElementById('reportCrop').addEventListener('change', updateReportChart);
+document.getElementById('reportMetric').addEventListener('change', updateReportChart);
+
+function getCurrentUserName() {
+  return document.getElementById('displayUserName').textContent || 'ローカルユーザー';
+}
+
+document.getElementById('reportForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  await saveReportData('draft');
+});
+
+async function submitReport() {
+  const title = document.getElementById('reportTitle').value.trim();
+  const analysis = document.getElementById('reportAnalysis').value.trim();
+  const cropId = document.getElementById('reportCrop').value;
+  if (!title || !analysis || !cropId) { showToast('タイトル、対象作物、考察は必須です'); return; }
+  await saveReportData('submitted');
+}
+
+async function saveReportData(status) {
+  const reports = getReports().slice();
+  const editId = document.getElementById('reportEditId').value;
+  const cropId = document.getElementById('reportCrop').value;
+  const crop = getCrops().find(c => c.id === cropId);
+  const data = {
+    id: editId || genId(),
+    cropId,
+    cropName: crop ? crop.name : '',
+    fieldNo: crop ? crop.fieldNo : '',
+    metric: document.getElementById('reportMetric').value,
+    title: document.getElementById('reportTitle').value.trim(),
+    observation: document.getElementById('reportObservation').value.trim(),
+    analysis: document.getElementById('reportAnalysis').value.trim(),
+    improvement: document.getElementById('reportImprovement').value.trim(),
+    studentName: getCurrentUserName(),
+    status,
+    createdAt: editId ? (reports.find(r => r.id === editId) || {}).createdAt || new Date().toISOString() : new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    submittedAt: status === 'submitted' ? new Date().toISOString() : (editId ? (reports.find(r => r.id === editId) || {}).submittedAt || '' : ''),
+    feedback: editId ? (reports.find(r => r.id === editId) || {}).feedback || null : null,
+  };
+  if (editId) { const i = reports.findIndex(r => r.id === editId); if (i >= 0) reports[i] = data; }
+  else reports.push(data);
+  await saveReports(reports);
+  resetReportForm();
+  renderReportList();
+  const msg = status === 'submitted' ? 'レポートを提出しました' : '下書きを保存しました';
+  showToast(msg);
+  if (useFirebase) {
+    try { await fsUpdate('reports', data.id, data); }
+    catch (err) { console.error('Firestore write error:', err); showToast('サーバー保存に失敗しました'); }
+  }
+}
+
+function resetReportForm() {
+  document.getElementById('reportForm').reset();
+  document.getElementById('reportEditId').value = '';
+  const card = document.getElementById('reportMiniChartCard');
+  card.style.display = 'none';
+  if (reportChartInstance) { reportChartInstance.destroy(); reportChartInstance = null; }
+}
+
+function editReport(id) {
+  const r = getReports().find(x => x.id === id);
+  if (!r) return;
+  if (r.status === 'submitted' && !isTeacher()) { showToast('提出済みのレポートは編集できません'); return; }
+  document.getElementById('reportEditId').value = r.id;
+  document.getElementById('reportCrop').value = r.cropId;
+  document.getElementById('reportMetric').value = r.metric || 'overall';
+  document.getElementById('reportTitle').value = r.title;
+  document.getElementById('reportObservation').value = r.observation || '';
+  document.getElementById('reportAnalysis').value = r.analysis;
+  document.getElementById('reportImprovement').value = r.improvement || '';
+  document.querySelector('[data-tab="reports"]').click();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  updateReportChart();
+}
+
+function deleteReport(id) {
+  showConfirm('このレポートを削除しますか？', async () => {
+    await saveReports(getReports().filter(r => r.id !== id));
+    renderReportList();
+    showToast('レポートを削除しました');
+    if (useFirebase) {
+      try { await fsDelete('reports', id); }
+      catch (err) { console.error('Firestore delete error:', err); }
+    }
+  });
+}
+
+function renderReportList() {
+  const reports = getReports();
+  const crops = getCrops();
+  const statusFilter = document.getElementById('reportFilterStatus').value;
+  const studentFilter = document.getElementById('reportFilterStudent').value;
+  // Populate student filter
+  const sf = document.getElementById('reportFilterStudent');
+  const students = [...new Set(reports.map(r => r.studentName).filter(Boolean))].sort();
+  const curStudentVal = sf.value;
+  sf.innerHTML = '<option value="">全生徒</option>';
+  students.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sf.appendChild(o); });
+  sf.value = curStudentVal;
+
+  const filtered = reports.filter(r => {
+    if (statusFilter && r.status !== statusFilter) return false;
+    if (studentFilter && r.studentName !== studentFilter) return false;
+    return true;
+  }).sort((a,b) => (b.updatedAt || b.createdAt).localeCompare(a.updatedAt || a.createdAt));
+
+  const el = document.getElementById('reportList');
+  if (!filtered.length) {
+    el.innerHTML = '<div class="empty-state"><div class="icon" aria-hidden="true">📝</div><p>レポートがありません</p></div>';
+    return;
+  }
+
+  const statusLabel = { draft:'下書き', submitted:'提出済み', reviewed:'フィードバック済み' };
+  const statusCls = { draft:'status-draft', submitted:'status-submitted', reviewed:'status-reviewed' };
+  const metricLabel = { height:'草丈の推移', stems:'茎数の推移', leaves:'葉数の推移', temp:'気温の推移', tillers:'分げつ数の推移', overall:'総合考察' };
+  const ratingLabel = { excellent:'優秀', good:'良好', fair:'普通', revise:'要修正' };
+  const ratingColor = { excellent:'var(--success)', good:'var(--primary-light)', fair:'var(--accent)', revise:'var(--danger)' };
+
+  let h = '';
+  filtered.forEach(r => {
+    const crop = crops.find(c => c.id === r.cropId);
+    const cn = crop ? `${crop.name}（${crop.fieldNo}）` : r.cropName ? `${r.cropName}（${r.fieldNo}）` : '不明';
+    const cardCls = r.status === 'reviewed' ? 'reviewed' : r.status === 'draft' ? 'draft' : '';
+    h += `<div class="report-card ${cardCls}">`;
+    h += `<div class="report-header"><div><div class="report-title">${esc(r.title)}</div><div class="report-meta">${esc(r.studentName)} ／ ${esc(cn)} ／ ${metricLabel[r.metric]||'総合考察'}</div></div><span class="report-status ${statusCls[r.status]||''}">${statusLabel[r.status]||r.status}</span></div>`;
+    if (r.observation) h += `<div style="font-size:.85rem;color:var(--text-secondary);margin-bottom:6px"><strong>観察:</strong> ${esc(r.observation)}</div>`;
+    h += `<div class="report-body">${esc(r.analysis)}</div>`;
+    if (r.improvement) h += `<div style="font-size:.85rem;margin-bottom:8px"><strong>改善点:</strong> ${esc(r.improvement)}</div>`;
+    if (r.feedback) {
+      h += `<div class="feedback-box"><div class="fb-label">教員フィードバック <span style="color:${ratingColor[r.feedback.rating]||'inherit'};font-weight:700">[${ratingLabel[r.feedback.rating]||''}]</span></div><div>${esc(r.feedback.comment)}</div><div style="font-size:.75rem;color:var(--text-secondary);margin-top:4px">${r.feedback.teacherName || '教員'} ／ ${formatDate(r.feedback.date ? r.feedback.date.split('T')[0] : '')}</div></div>`;
+    }
+    h += `<div class="btn-group no-print" style="margin-top:8px">`;
+    if (r.status === 'draft') {
+      h += `<button class="btn btn-outline btn-sm" onclick="editReport('${r.id}')">編集</button>`;
+      h += `<button class="btn btn-danger btn-sm" onclick="deleteReport('${r.id}')">削除</button>`;
+    }
+    if (r.status === 'submitted' && isTeacher()) {
+      h += `<button class="btn btn-primary btn-sm" onclick="openFeedbackModal('${r.id}')">フィードバック</button>`;
+    }
+    if (r.status === 'reviewed') {
+      if (isTeacher()) h += `<button class="btn btn-outline btn-sm" onclick="openFeedbackModal('${r.id}')">フィードバック修正</button>`;
+    }
+    if (isTeacher()) h += ` <button class="btn btn-danger btn-sm" onclick="deleteReport('${r.id}')">削除</button>`;
+    h += `</div></div>`;
+  });
+  el.innerHTML = h;
+}
+
+// --- Feedback Modal ---
+function openFeedbackModal(reportId) {
+  const r = getReports().find(x => x.id === reportId);
+  if (!r) return;
+  document.getElementById('feedbackReportId').value = reportId;
+  const metricLabel = { height:'草丈の推移', stems:'茎数の推移', leaves:'葉数の推移', temp:'気温の推移', tillers:'分げつ数の推移', overall:'総合考察' };
+  document.getElementById('feedbackReportSummary').innerHTML = `<strong>${esc(r.title)}</strong><br><span style="font-size:.82rem;color:var(--text-secondary)">${esc(r.studentName)} ／ ${metricLabel[r.metric]||'総合考察'}</span><br><br>${esc(r.analysis)}`;
+  if (r.feedback) {
+    document.getElementById('feedbackRating').value = r.feedback.rating || '';
+    document.getElementById('feedbackComment').value = r.feedback.comment || '';
+  } else {
+    document.getElementById('feedbackForm').reset();
+    document.getElementById('feedbackReportId').value = reportId;
+  }
+  document.getElementById('feedbackModal').classList.add('show');
+  setTimeout(() => { document.getElementById('feedbackRating').focus(); }, 100);
+}
+
+function closeFeedbackModal() {
+  document.getElementById('feedbackModal').classList.remove('show');
+}
+
+async function saveFeedback(e) {
+  e.preventDefault();
+  const reportId = document.getElementById('feedbackReportId').value;
+  const reports = getReports().slice();
+  const idx = reports.findIndex(r => r.id === reportId);
+  if (idx < 0) return;
+  reports[idx].status = 'reviewed';
+  reports[idx].feedback = {
+    rating: document.getElementById('feedbackRating').value,
+    comment: document.getElementById('feedbackComment').value.trim(),
+    teacherName: getCurrentUserName(),
+    date: new Date().toISOString(),
+  };
+  reports[idx].updatedAt = new Date().toISOString();
+  await saveReports(reports);
+  closeFeedbackModal();
+  renderReportList();
+  showToast('フィードバックを送信しました');
+  if (useFirebase) {
+    try { await fsUpdate('reports', reports[idx].id, reports[idx]); }
+    catch (err) { console.error('Firestore write error:', err); showToast('サーバー保存に失敗しました'); }
+  }
+}
+
+// Close feedback modal on Escape
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && document.getElementById('feedbackModal').classList.contains('show')) closeFeedbackModal();
+});
+
+// ============================================================
 //  Render All & Init
 // ============================================================
 function renderAll() {
@@ -1726,6 +2049,7 @@ function renderAll() {
   renderGrowthList();
   renderFertList();
   renderPestList();
+  renderReportList();
   applyRoleRestrictions();
 }
 
