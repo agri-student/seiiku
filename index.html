@@ -1137,18 +1137,35 @@ document.getElementById('growthForm').addEventListener('submit', async function(
   if (editId) { const i = records.findIndex(r => r.id === editId); if (i >= 0) records[i] = data; }
   else records.push(data);
   await saveGrowth(records);
-  resetGrowthForm(); renderGrowthList();
+  resetGrowthForm(!editId); renderGrowthList();
   showToast(editId ? '記録を更新しました' : '生育記録を保存しました');
   if (useFirebase) {
     try { await fsUpdate('growth', data.id, data); }
     catch (err) { console.error('Firestore write error:', err); showToast('サーバー保存に失敗しました'); }
   }
 });
-function resetGrowthForm() {
+function resetGrowthForm(keepCrop) {
+  const cropSel = document.getElementById('growthCrop');
+  const prevCropId = cropSel.value;
+  const prevPlantNo = document.getElementById('growthPlantNo').value;
+  const prevDate = document.getElementById('growthDate').value;
   document.getElementById('growthForm').reset();
   document.getElementById('growthEditId').value = '';
-  document.getElementById('growthRiceFields').classList.remove('show');
-  document.getElementById('growthWheatFields').classList.remove('show');
+  if (keepCrop && prevCropId) {
+    cropSel.value = prevCropId;
+    const crop = getCrops().find(c => c.id === prevCropId);
+    document.getElementById('growthRiceFields').classList.toggle('show', crop && crop.type === 'rice');
+    document.getElementById('growthWheatFields').classList.toggle('show', crop && crop.type === 'wheat');
+    updatePlantNoSelect('growthPlantNo', crop);
+    document.getElementById('growthDate').value = prevDate;
+    const nextPlant = String(parseInt(prevPlantNo || '1') + 1);
+    const sel = document.getElementById('growthPlantNo');
+    if ([...sel.options].some(o => o.value === nextPlant)) sel.value = nextPlant;
+    else sel.value = prevPlantNo;
+  } else {
+    document.getElementById('growthRiceFields').classList.remove('show');
+    document.getElementById('growthWheatFields').classList.remove('show');
+  }
 }
 function editGrowth(id) {
   const r = getGrowth().find(x => x.id === id); if (!r) return;
