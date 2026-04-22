@@ -51,7 +51,7 @@ main{padding:16px;max-width:1200px;margin:0 auto}
 .btn-accent{background:var(--accent);color:#fff}.btn-accent:hover{background:#e65100}
 .btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{background:#8e0000}
 .btn-outline{background:transparent;color:var(--primary);border:2px solid var(--primary)}.btn-outline:hover{background:var(--success-light)}
-.btn-sm{padding:6px 12px;font-size:.8rem}
+.btn-sm{padding:6px 12px;font-size:.8rem;min-height:36px}
 .btn-group{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 table{width:100%;border-collapse:collapse;font-size:.85rem}
@@ -160,14 +160,15 @@ tr:hover{background:#f9f9f9}
   .card{padding:14px}
   .form-grid{grid-template-columns:1fr}
   .stats-grid{grid-template-columns:repeat(2,1fr)}
-  .btn{padding:8px 14px;font-size:.82rem}
+  .btn{padding:10px 14px;font-size:.82rem;min-height:44px}
+  .btn-sm{padding:8px 12px;min-height:44px}
   .modal{margin-top:10px}
   .chart-container{height:250px}
   .calendar-grid .day-cell{min-height:56px;padding:3px;touch-action:manipulation}
   .calendar-grid .day-cell .day-num{font-size:.85rem;padding:2px}
   .calendar-grid .day-cell .cal-event{font-size:.6rem;padding:2px 3px}
   .calendar-nav{flex-wrap:wrap;gap:8px}
-  .calendar-nav button{padding:8px 12px;font-size:.8rem;min-height:36px}
+  .calendar-nav button{padding:8px 16px;font-size:.8rem;min-height:44px}
   .calendar-nav .month-label{font-size:.95rem;min-width:auto}
   .login-card{padding:28px 20px}
   table{font-size:.78rem}
@@ -1010,6 +1011,13 @@ document.getElementById('cropForm').addEventListener('submit', async function(e)
     earDate: document.getElementById('cropEarDate').value,
     plantCount: parseInt(document.getElementById('cropPlantCount').value) || 1,
   };
+  if (editId) {
+    const maxPlantNo = Math.max(1, ...getGrowth().filter(r => r.cropId === editId).map(r => parseInt(r.plantNo || '1')));
+    if (data.plantCount < maxPlantNo) {
+      markInvalid(document.getElementById('cropPlantCount'), `株${maxPlantNo}の記録があるため、${maxPlantNo}未満にできません`);
+      return;
+    }
+  }
   // Date consistency validation
   const dateErrors = validateCropDates(data.sowDate, data.plantDate, data.harvestDate);
   if (dateErrors.length) {
@@ -2113,7 +2121,7 @@ function renderReportList() {
     if (statusFilter && r.status !== statusFilter) return false;
     if (studentFilter && r.studentName !== studentFilter) return false;
     return true;
-  }).sort((a,b) => (b.updatedAt || b.createdAt).localeCompare(a.updatedAt || a.createdAt));
+  }).sort((a,b) => (b.updatedAt || b.createdAt || '').localeCompare(a.updatedAt || a.createdAt || ''));
 
   const el = document.getElementById('reportList');
   if (!filtered.length) {
