@@ -324,7 +324,6 @@ tr:hover{background:#f9f9f9}
           <div class="form-group"><label>作物 *</label><select id="growthCrop" required></select></div>
           <div class="form-group"><label>株番号</label><select id="growthPlantNo"><option value="1">株1</option></select></div>
           <div class="form-group"><label>日付 *</label><input type="date" id="growthDate" required></div>
-          <div class="form-group"><label>生育ステージ</label><select id="growthStage"><option value="">選択</option><option value="播種">播種</option><option value="発芽">発芽</option><option value="育苗">育苗</option><option value="定植">定植</option><option value="活着">活着</option><option value="生育初期">生育初期</option><option value="生育中期">生育中期</option><option value="生育後期">生育後期</option><option value="開花">開花</option><option value="結実">結実</option><option value="成熟">成熟</option><option value="収穫">収穫</option><option value="分げつ期">分げつ期</option><option value="幼穂形成期">幼穂形成期</option><option value="出穂期">出穂期</option><option value="登熟期">登熟期</option></select></div>
           <div class="form-group"><label>草丈 (cm)</label><input type="number" id="growthHeight" step="0.1" min="0" max="500" placeholder="例: 25.5"></div>
           <div class="form-group"><label>茎数 (本)</label><input type="number" id="growthStems" min="0" max="999" placeholder="例: 15"></div>
           <div class="form-group"><label>葉の枚数 (枚)</label><input type="number" id="growthLeaves" min="0" max="999" placeholder="例: 8"></div>
@@ -1125,7 +1124,7 @@ document.getElementById('growthForm').addEventListener('submit', async function(
     cropId: document.getElementById('growthCrop').value,
     plantNo: document.getElementById('growthPlantNo').value || '1',
     date: document.getElementById('growthDate').value,
-    stage: document.getElementById('growthStage').value,
+    stage: '',
     height: parseFloat(document.getElementById('growthHeight').value) || null,
     stems: parseInt(document.getElementById('growthStems').value) || null,
     leaves: parseInt(document.getElementById('growthLeaves').value) || null,
@@ -1193,7 +1192,7 @@ function editGrowth(id) {
   document.getElementById('growthCrop').dispatchEvent(new Event('change'));
   document.getElementById('growthPlantNo').value = r.plantNo || '1';
   document.getElementById('growthDate').value = r.date;
-  document.getElementById('growthStage').value = r.stage || '';
+
   document.getElementById('growthHeight').value = r.height || '';
   document.getElementById('growthStems').value = r.stems || '';
   document.getElementById('growthLeaves').value = r.leaves || '';
@@ -1237,7 +1236,7 @@ function renderGrowthList() {
     const plantLbl = `株${r.plantNo || '1'}`;
     const cn = crop ? `${crop.name}（${crop.fieldNo}）${plantLbl}` : `不明 ${plantLbl}`;
     let d = [];
-    if (r.stage) d.push(`ステージ: ${r.stage}`); if (r.height) d.push(`草丈: ${r.height}cm`); if (r.stems) d.push(`茎数: ${r.stems}本`);
+    if (r.height) d.push(`草丈: ${r.height}cm`); if (r.stems) d.push(`茎数: ${r.stems}本`);
     if (r.leaves) d.push(`葉数: ${r.leaves}枚`); if (r.temp != null) d.push(`気温: ${r.temp}℃`);
     if (r.tillers) d.push(`分げつ数: ${r.tillers}`); if (r.lodging) d.push(`倒伏: ${r.lodging}`); if (r.fusarium) d.push(`赤かび病: ${r.fusarium}`); if (r.work) d.push(`作業: ${r.work}`);
     h += `<div class="record-card" style="display:flex;gap:10px;align-items:flex-start"><input type="checkbox" class="bulk-check growth-bulk-cb no-print" data-id="${r.id}" onchange="toggleGrowthSelect('${r.id}',this.checked)"${growthSelectedIds.has(r.id)?' checked':''}><div style="flex:1"><div class="date">${formatDate(r.date)} - ${esc(cn)}</div><div class="meta">${d.map(x=>esc(x)).join(' ／ ')}</div>${r.memo?`<div class="content">${esc(r.memo)}</div>`:''}<div class="btn-group no-print"><button class="btn btn-outline btn-sm" onclick="editGrowth('${r.id}')">編集</button> <button class="btn btn-danger btn-sm" onclick="deleteGrowth('${r.id}')">削除</button></div></div></div>`;
@@ -1376,7 +1375,7 @@ function renderDashboard() {
     recent.forEach(r => {
       const crop = crops.find(c => c.id === r.cropId);
       const cn = crop ? `${crop.name}（${crop.fieldNo}）` : '不明';
-      let info = []; if (r.stage) info.push(r.stage); if (r.height) info.push(`草丈${r.height}cm`); if (r.work) info.push(r.work);
+      let info = []; if (r.height) info.push(`草丈${r.height}cm`); if (r.work) info.push(r.work);
       const col = crop ? ({rice:'#2e7d32',wheat:'#e65100',vegetable:'#1565c0'}[crop.type]||'var(--primary)') : 'var(--primary)';
       h += `<div class="record-card" style="border-left-color:${col}"><div class="date">${formatDate(r.date)} - ${esc(cn)}</div><div class="meta">${info.map(i=>esc(i)).join(' ／ ')}</div>${r.memo?`<div class="content">${esc(r.memo)}</div>`:''}</div>`;
     });
@@ -1574,11 +1573,11 @@ function generatePrintView() {
     if (content==='summary'||content==='growth'||content==='full') {
       const recs = getGrowth().filter(r=>r.cropId===crop.id).sort((a,b)=>{ const c = a.date.localeCompare(b.date); return c !== 0 ? c : (parseInt(a.plantNo||'1') - parseInt(b.plantNo||'1')); });
       if (recs.length) {
-        h+='<h4 style="margin:12px 0 8px">生育記録</h4><table><thead><tr><th>日付</th><th>株</th><th>ステージ</th><th>草丈</th><th>茎数</th><th>葉数</th><th>気温</th>';
+        h+='<h4 style="margin:12px 0 8px">生育記録</h4><table><thead><tr><th>日付</th><th>株</th><th>草丈</th><th>茎数</th><th>葉数</th><th>気温</th>';
         if (crop.type==='rice') h+='<th>分げつ数</th><th>倒伏</th>';
         if (crop.type==='wheat') h+='<th>赤かび病</th>';
         h+='<th>作業</th><th>メモ</th></tr></thead><tbody>';
-        recs.forEach(r => { h+=`<tr><td>${formatDate(r.date)}</td><td>株${r.plantNo||'1'}</td><td>${esc(r.stage||'-')}</td><td>${r.height?r.height+'cm':'-'}</td><td>${r.stems||'-'}</td><td>${r.leaves?r.leaves+'枚':'-'}</td><td>${r.temp!=null?r.temp+'℃':'-'}</td>`; if(crop.type==='rice')h+=`<td>${r.tillers||'-'}</td><td>${esc(r.lodging||'-')}</td>`; if(crop.type==='wheat')h+=`<td>${esc(r.fusarium||'-')}</td>`; h+=`<td>${esc(r.work||'-')}</td><td>${esc(r.memo||'-')}</td></tr>`; });
+        recs.forEach(r => { h+=`<tr><td>${formatDate(r.date)}</td><td>株${r.plantNo||'1'}</td><td>${r.height?r.height+'cm':'-'}</td><td>${r.stems||'-'}</td><td>${r.leaves?r.leaves+'枚':'-'}</td><td>${r.temp!=null?r.temp+'℃':'-'}</td>`; if(crop.type==='rice')h+=`<td>${r.tillers||'-'}</td><td>${esc(r.lodging||'-')}</td>`; if(crop.type==='wheat')h+=`<td>${esc(r.fusarium||'-')}</td>`; h+=`<td>${esc(r.work||'-')}</td><td>${esc(r.memo||'-')}</td></tr>`; });
         h+='</tbody></table>';
       }
     }
@@ -1601,11 +1600,11 @@ function exportCSV() {
   const crops = getCrops();
   const tc = tid==='all' ? crops : crops.filter(c=>c.id===tid);
   if (!tc.length) { showToast('出力対象がありません'); return; }
-  let csv = '\uFEFF作物名,品種,タイプ,圃場,担当,株番号,日付,ステージ,草丈(cm),茎数,葉数(枚),気温(℃),分げつ数,倒伏,赤かび病,作業,メモ\n';
+  let csv = '\uFEFF作物名,品種,タイプ,圃場,担当,株番号,日付,草丈(cm),茎数,葉数(枚),気温(℃),分げつ数,倒伏,赤かび病,作業,メモ\n';
   tc.forEach(crop => {
     const recs = getGrowth().filter(r=>r.cropId===crop.id).sort((a,b)=>{ const c = a.date.localeCompare(b.date); return c !== 0 ? c : (parseInt(a.plantNo||'1') - parseInt(b.plantNo||'1')); });
-    if (!recs.length) csv+=`"${crop.name}","${crop.variety||''}","${typeName(crop.type)}","${crop.fieldNo}","${crop.studentName}","","","","","","","","","","","",""\n`;
-    else recs.forEach(r=>{csv+=`"${crop.name}","${crop.variety||''}","${typeName(crop.type)}","${crop.fieldNo}","${crop.studentName}","${r.plantNo||'1'}","${r.date}","${r.stage||''}","${r.height||''}","${r.stems||''}","${r.leaves||''}","${r.temp!=null?r.temp:''}","${r.tillers||''}","${r.lodging||''}","${r.fusarium||''}","${r.work||''}","${(r.memo||'').replace(/"/g,'""')}"\n`;});
+    if (!recs.length) csv+=`"${crop.name}","${crop.variety||''}","${typeName(crop.type)}","${crop.fieldNo}","${crop.studentName}","","","","","","","","","","",""\n`;
+    else recs.forEach(r=>{csv+=`"${crop.name}","${crop.variety||''}","${typeName(crop.type)}","${crop.fieldNo}","${crop.studentName}","${r.plantNo||'1'}","${r.date}","${r.height||''}","${r.stems||''}","${r.leaves||''}","${r.temp!=null?r.temp:''}","${r.tillers||''}","${r.lodging||''}","${r.fusarium||''}","${r.work||''}","${(r.memo||'').replace(/"/g,'""')}"\n`;});
   });
   const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
@@ -1682,7 +1681,7 @@ function renderCalendar() {
   getGrowth().forEach(r => {
     const crop = crops.find(c => c.id === r.cropId);
     if (!events[r.date]) events[r.date] = [];
-    events[r.date].push({ type: 'growth', text: `${crop?crop.name:'?'} ${r.stage||'記録'}` });
+    events[r.date].push({ type: 'growth', text: `${crop?crop.name:'?'} 記録` });
   });
   getFert().forEach(r => {
     const crop = crops.find(c => c.id === r.cropId);
@@ -1880,17 +1879,19 @@ function importCSV() {
       const growth = getGrowth().slice();
       const typeMap = {'水稲':'rice','麦':'wheat','野菜類':'vegetable','果樹':'fruit','花き':'flower','豆類':'bean'};
       const hasPlantNoCol = header.includes('株番号');
+      const hasStageCol = header.includes('ステージ');
 
       for (let i = 1; i < lines.length; i++) {
         const cols = parseCSVLine(lines[i]);
-        if (cols.length < 10) { skipped++; continue; }
+        if (cols.length < 9) { skipped++; continue; }
         let cropName, variety, typeLbl, fieldNo, studentName, plantNo, date, stage, height, stems, leavesStr, tempStr, tillers, lodging, fusarium, work, memo;
-        if (hasPlantNoCol) {
-          [cropName, variety, typeLbl, fieldNo, studentName, plantNo, date, stage, height, stems, leavesStr, tempStr, tillers, lodging, fusarium, work, memo] = cols;
-        } else {
-          [cropName, variety, typeLbl, fieldNo, studentName, date, stage, height, stems, leavesStr, tempStr, tillers, lodging, fusarium, work, memo] = cols;
-          plantNo = '1';
-        }
+        let idx = 0;
+        cropName = cols[idx++]; variety = cols[idx++]; typeLbl = cols[idx++]; fieldNo = cols[idx++]; studentName = cols[idx++];
+        plantNo = hasPlantNoCol ? cols[idx++] : '1';
+        date = cols[idx++];
+        stage = hasStageCol ? cols[idx++] : '';
+        height = cols[idx++]; stems = cols[idx++]; leavesStr = cols[idx++]; tempStr = cols[idx++];
+        tillers = cols[idx++]; lodging = cols[idx++]; fusarium = cols[idx++]; work = cols[idx++]; memo = cols[idx++];
         if (!cropName || !date) { skipped++; continue; }
 
         // Find or create crop
