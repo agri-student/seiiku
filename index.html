@@ -975,6 +975,17 @@ function populateCropSelects() {
     crops.forEach(c => { const o = document.createElement('option'); o.value = c.id; o.textContent = cropLabel(c); sel.appendChild(o); });
     if (val) sel.value = val;
   });
+  // Sync plant number selects with the currently selected crop
+  const growthCropId = document.getElementById('growthCrop').value;
+  const growthCrop = growthCropId ? crops.find(c => c.id === growthCropId) : null;
+  updatePlantNoSelect('growthPlantNo', growthCrop);
+  if (growthCrop) {
+    document.getElementById('growthRiceFields').classList.toggle('show', growthCrop.type === 'rice');
+    document.getElementById('growthWheatFields').classList.toggle('show', growthCrop.type === 'wheat');
+  }
+  const filterCropId = document.getElementById('growthFilterCrop').value;
+  const filterCrop = filterCropId ? crops.find(c => c.id === filterCropId) : null;
+  updatePlantNoSelect('growthFilterPlant', filterCrop, true);
   // Update student name datalist
   const dl = document.getElementById('studentNameList');
   if (dl) {
